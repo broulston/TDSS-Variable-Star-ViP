@@ -805,7 +805,7 @@ def plot_CMD(xi, yi, zi, object_color, object_color_errs, object_absM, object_ab
     plt_ax.set_ylabel("M$_{i}$")
 
     plt_ax.set_xlim([-1.0,4.5])
-    #plt_ax.set_ylim([2.5,15.0])
+    plt_ax.set_ylim([-1.0,15.0])
     plt_ax.invert_yaxis()
 
     plt_ax.plot(g_i,M_i, color="orange", lw=2.0)
