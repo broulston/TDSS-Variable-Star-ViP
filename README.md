@@ -26,4 +26,6 @@ The main functions of the program (which call `Vartools` and creates the figures
 
 Once all of this is ready, the `Vi` program can be run. 
 
-`Vi` uses the [Vartools](http://adsabs.harvard.edu/abs/2016arXiv160506811H) program, which was created by @joeldhartman and more information can be found [here](https://www.astro.princeton.edu/~jhartman/vartools.html). The GitHub repo can also be found [here](https://github.com/joeldhartman/vartools)
+`Vi` uses the [Vartools](http://adsabs.harvard.edu/abs/2016arXiv160506811H) program, which was created by @joeldhartman and more information can be found [here](https://www.astro.princeton.edu/~jhartman/vartools.html). The GitHub repo can also be found [here](https://github.com/joeldhartman/vartools).
+
+`Vi` also makes use of [PyHammer](https://github.com/BU-hammerTeam/PyHammer), a spectral classification tool developed by the @BU-hammerTeam at Boston University. The corresponding publication is [Kesseli et al. (2017)](https://iopscience.iop.org/article/10.3847/1538-4365/aa656d/pdf).
