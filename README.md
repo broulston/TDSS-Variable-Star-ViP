@@ -25,3 +25,5 @@ The main functions of the program (which call `Vartools` and creates the figures
 6. Installation of the `Vartools` program for analyzing light curves.
 
 Once all of this is ready, the `Vi` program can be run. 
+
+`Vi` uses the [Vartools](http://adsabs.harvard.edu/abs/2016arXiv160506811H) program, which was created by @joeldhartman and more information can be found [here](https://www.astro.princeton.edu/~jhartman/vartools.html). The GitHub repo can also be found [here](https://github.com/joeldhartman/vartools)
