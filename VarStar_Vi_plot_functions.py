@@ -147,11 +147,11 @@ def plot_CSS_LC_noDrake(css_id, LC_OutDir, vartools_command, vartools_command_wh
         plt_ax.axhline(fmagmn+3*fmag_stdev, color='b', ls=':', lw=2,alpha=0.5, label='3X Mag StDev')
         plt_ax.axhline(fmagmn-3*fmag_stdev, color='b', ls=':', lw=2,alpha=0.5)
         if is_alias & is_alias2:
-            title_line1 = 'CSS ID: {!s} | P={!s} \n logProb={!s} | Amp={!s} \n ngood={!s} | nreject={!s} \n nabove={!s} ({!s}%) | nbelow={!s} ({!s}%) \n'.format(lc_id, Per_ls+"ww", logProb_ls, Amp_ls, nfmag, rejects, nabove, np.round((nabove/nmag)*100,2), nbelow, np.round((nbelow/nmag)*100,2))
+            title_line1 = 'CSS ID: {!s} | P={!s} \n logProb={!s} | Amp={!s} \n ngood={!s} | nreject={!s} \n nabove={!s} ({!s}%) | nbelow={!s} ({!s}%) \n'.format(lc_id, Per_ls+"ww", logProb_ls, Amp_ls, nfmag, rejects, nabove, np.int(np.round((nabove/nmag)*100,2)), nbelow, np.int(np.round((nbelow/nmag)*100,2)))
         elif is_alias:
-            title_line1 = 'CSS ID: {!s} | P={!s} \n logProb={!s} | Amp={!s} \n ngood={!s} | nreject={!s} \n nabove={!s} ({!s}%) | nbelow={!s} ({!s}%) \n'.format(lc_id, Per_ls+"w", logProb_ls, Amp_ls, nfmag, rejects, nabove, np.round((nabove/nmag)*100,2), nbelow, np.round((nbelow/nmag)*100,2))
+            title_line1 = 'CSS ID: {!s} | P={!s} \n logProb={!s} | Amp={!s} \n ngood={!s} | nreject={!s} \n nabove={!s} ({!s}%) | nbelow={!s} ({!s}%) \n'.format(lc_id, Per_ls+"w", logProb_ls, Amp_ls, nfmag, rejects, nabove, np.int(np.round((nabove/nmag)*100,2)), nbelow, np.int(np.round((nbelow/nmag)*100,2)))
         else:
-            title_line1 = 'CSS ID: {!s} | P={!s} \n logProb={!s} | Amp={!s} \n ngood={!s} | nreject={!s} \n nabove={!s} ({!s}%) | nbelow={!s} ({!s}%) \n'.format(lc_id, Per_ls, logProb_ls, Amp_ls, nfmag, rejects, nabove, np.round((nabove/nmag)*100,2), nbelow, np.round((nbelow/nmag)*100,2))
+            title_line1 = 'CSS ID: {!s} | P={!s} \n logProb={!s} | Amp={!s} \n ngood={!s} | nreject={!s} \n nabove={!s} ({!s}%) | nbelow={!s} ({!s}%) \n'.format(lc_id, Per_ls, logProb_ls, Amp_ls, nfmag, rejects, nabove, np.int(np.round((nabove/nmag)*100,2)), nbelow, np.int(np.round((nbelow/nmag)*100,2)))
         #title_line2 = 'Drake: P={!s} | Amp={!s} | VarType={!s} | Subclass={!s}'.format(D_Per, D_Amp, D_Vartype, D_sub)
         title_str = title_line1 #+title_line2
         plt_ax.set_title(title_str, fontsize=12)
@@ -181,9 +181,9 @@ def plot_CSS_LC_noDrake(css_id, LC_OutDir, vartools_command, vartools_command_wh
         # set plot labels
         #title_str = f'{lc_id} \n mean mag. = {fmagmn:0.2f}'
         if is_alias:
-            title_line1 = 'CSS ID: {!s} | P={!s} \n logProb={!s} | Amp={!s} \n ngood={!s} | nreject={!s} \n nabove={!s} ({!s}%) | nbelow={!s} ({!s}%) \n'.format(lc_id, Per_ls+"w", logProb_ls, Amp_ls, nfmag, rejects, nabove, np.round((nabove/nmag)*100,2), nbelow, np.round((nbelow/nmag)*100,2))
+            title_line1 = 'CSS ID: {!s} | P={!s} \n logProb={!s} | Amp={!s} \n ngood={!s} | nreject={!s} \n nabove={!s} ({!s}%) | nbelow={!s} ({!s}%) \n'.format(lc_id, Per_ls+"w", logProb_ls, Amp_ls, nfmag, rejects, nabove, np.int(np.round((nabove/nmag)*100,2)), nbelow, np.int(np.round((nbelow/nmag)*100,2)))
         else:
-            title_line1 = 'CSS ID: {!s} | P={!s} \n logProb={!s} | Amp={!s}  \n ngood={!s} | nreject={!s} \n nabove={!s} ({!s}%) | nbelow={!s} ({!s}%) \n'.format(lc_id, Per_ls, logProb_ls, Amp_ls, nfmag, rejects, nabove, np.round((nabove/nmag)*100,2), nbelow, np.round((nbelow/nmag)*100,2))
+            title_line1 = 'CSS ID: {!s} | P={!s} \n logProb={!s} | Amp={!s}  \n ngood={!s} | nreject={!s} \n nabove={!s} ({!s}%) | nbelow={!s} ({!s}%) \n'.format(lc_id, Per_ls, logProb_ls, Amp_ls, nfmag, rejects, nabove, np.int(np.round((nabove/nmag)*100,2)), nbelow, np.int(np.round((nbelow/nmag)*100,2)))
         plt_ax.set_title(title_line1, fontsize=12)
         plt_ax.set_xlabel('MJD')
         plt_ax.set_ylabel('Mag')
@@ -322,9 +322,9 @@ def plot_CSS_LC_Drake(css_id, LC_OutDir, vartools_command, vartools_command_whit
         plt_ax.axhline(fmagmn+3*fmag_stdev, color='b', ls=':', lw=2,alpha=0.5, label='3X Mag StDev')
         plt_ax.axhline(fmagmn-3*fmag_stdev, color='b', ls=':', lw=2,alpha=0.5)
         if is_alias:
-            title_line1 = 'CSS ID: {!s} | P={!s} \n logProb={!s} | Amp={!s}  \n ngood={!s} | nreject={!s} \n nabove={!s} ({!s}%) | nbelow={!s} ({!s}%) \n'.format(lc_id, Per_ls+"w", logProb_ls, Amp_ls, nfmag, rejects, nabove, np.round((nabove/nmag)*100,2), nbelow, np.round((nbelow/nmag)*100,2))
+            title_line1 = 'CSS ID: {!s} | P={!s} \n logProb={!s} | Amp={!s}  \n ngood={!s} | nreject={!s} \n nabove={!s} ({!s}%) | nbelow={!s} ({!s}%) \n'.format(lc_id, Per_ls+"w", logProb_ls, Amp_ls, nfmag, rejects, nabove, np.int(np.round((nabove/nmag)*100,2)), nbelow, np.int(np.round((nbelow/nmag)*100,2)))
         else:
-            title_line1 = 'CSS ID: {!s} | P={!s} \n logProb={!s} | Amp={!s}  \n ngood={!s} | nreject={!s} \n nabove={!s} ({!s}%) | nbelow={!s} ({!s}%) \n'.format(lc_id, Per_ls, logProb_ls, Amp_ls, nfmag, rejects, nabove, np.round((nabove/nmag)*100,2), nbelow, np.round((nbelow/nmag)*100,2))
+            title_line1 = 'CSS ID: {!s} | P={!s} \n logProb={!s} | Amp={!s}  \n ngood={!s} | nreject={!s} \n nabove={!s} ({!s}%) | nbelow={!s} ({!s}%) \n'.format(lc_id, Per_ls, logProb_ls, Amp_ls, nfmag, rejects, nabove, np.int(np.round((nabove/nmag)*100,2)), nbelow, np.int(np.round((nbelow/nmag)*100,2)))
         #title_line2 = 'Drake: P={!s} | Amp={!s} | VarType={!s} | Subclass={!s}'.format(D_Per, D_Amp, D_Vartype, D_sub)
         title_str = title_line1 #+title_line2
         plt_ax.set_title(title_str, fontsize=12)
@@ -354,11 +354,11 @@ def plot_CSS_LC_Drake(css_id, LC_OutDir, vartools_command, vartools_command_whit
         # set plot labels
         #title_str = f'{lc_id} \n mean mag. = {fmagmn:0.2f}'
         if is_alias & is_alias2:
-            title_line1 = 'CSS ID: {!s} | P={!s} \n logProb={!s} | Amp={!s}  \n ngood={!s} | nreject={!s} \n nabove={!s} ({!s}%) | nbelow={!s} ({!s}%) \n'.format(lc_id, Per_ls+"ww", logProb_ls, Amp_ls, nfmag, rejects, nabove, np.round((nabove/nmag)*100,2), nbelow, np.round((nbelow/nmag)*100,2))
+            title_line1 = 'CSS ID: {!s} | P={!s} \n logProb={!s} | Amp={!s}  \n ngood={!s} | nreject={!s} \n nabove={!s} ({!s}%) | nbelow={!s} ({!s}%) \n'.format(lc_id, Per_ls+"ww", logProb_ls, Amp_ls, nfmag, rejects, nabove, np.int(np.round((nabove/nmag)*100,2)), nbelow, np.int(np.round((nbelow/nmag)*100,2)))
         elif is_alias:
-            title_line1 = 'CSS ID: {!s} | P={!s} \n logProb={!s} | Amp={!s}  \n ngood={!s} | nreject={!s} \n nabove={!s} ({!s}%) | nbelow={!s} ({!s}%) \n'.format(lc_id, Per_ls+"w", logProb_ls, Amp_ls, nfmag, rejects, nabove, np.round((nabove/nmag)*100,2), nbelow, np.round((nbelow/nmag)*100,2))
+            title_line1 = 'CSS ID: {!s} | P={!s} \n logProb={!s} | Amp={!s}  \n ngood={!s} | nreject={!s} \n nabove={!s} ({!s}%) | nbelow={!s} ({!s}%) \n'.format(lc_id, Per_ls+"w", logProb_ls, Amp_ls, nfmag, rejects, nabove, np.int(np.round((nabove/nmag)*100,2)), nbelow, np.int(np.round((nbelow/nmag)*100,2)))
         else:
-            title_line1 = 'CSS ID: {!s} | P={!s} \n logProb={!s} | Amp={!s}  \n ngood={!s} | nreject={!s} \n nabove={!s} ({!s}%) | nbelow={!s} ({!s}%) \n'.format(lc_id, Per_ls, logProb_ls, Amp_ls, nfmag, rejects, nabove, np.round((nabove/nmag)*100,2), nbelow, np.round((nbelow/nmag)*100,2))
+            title_line1 = 'CSS ID: {!s} | P={!s} \n logProb={!s} | Amp={!s}  \n ngood={!s} | nreject={!s} \n nabove={!s} ({!s}%) | nbelow={!s} ({!s}%) \n'.format(lc_id, Per_ls, logProb_ls, Amp_ls, nfmag, rejects, nabove, np.int(np.round((nabove/nmag)*100,2)), nbelow, np.int(np.round((nbelow/nmag)*100,2)))
         title_line2 = 'Drake: P={!s} | Amp={!s} | VarType={!s} '.format(D_Per, D_Amp, D_Vartype)
         #title_line2 = 'Drake: P={!s} | Amp={!s} | VarType={!s} | Subclass={!s}'.format(D_Per, D_Amp, D_Vartype, D_sub)
         plt_ax.set_title(title_line1+" \n "+title_line2, fontsize=12)
@@ -508,24 +508,24 @@ def plot_SDSS_DR_spec(plate_string, mjd_string, fiberid_string, object_color, ob
         EqW_string = ""
         plot_title = str("RA: "+ra_string+", DEC: "+dec_string+" | cz = "+str(cz)+"$\pm$"+str(cz_err)+" km s$^{-1}$ | SDSS Subclass = "
                     +str(subclass.split()[0])+"\n PyHammer = "+specTypeMatch+EqW_string+", RV = "+pyhammer_RV+" km s$^{-1}$"+"\n "
-                    +"DR | Plate = "+plate_string+" MJD = "+mjd_string+" Fiberid = "+fiberid_string+" | GaiaDR2 Dist = "+str(np.round(TDSSprop.gaia_dist[TDSS_file_index],2))
-                    +" pc ("+str(np.round(TDSSprop.gaia_parallax[TDSS_file_index]/TDSSprop.gaia_parallax_error[TDSS_file_index],2))+") | GaiaDR2 PMtot = "+str(np.round(TDSSprop.gaia_pmTOT[TDSS_file_index],2))
-                    +" mas/yr ("+str(np.round(TDSSprop.gaia_pmTOT[TDSS_file_index]/TDSSprop.gaia_pmTOT_error[TDSS_file_index], 2))+")")
+                    +"DR | Plate = "+plate_string+" MJD = "+mjd_string+" Fiberid = "+fiberid_string+" | GaiaDR2 Dist = "+str(np.int(np.round(TDSSprop.gaia_dist[TDSS_file_index],2)))
+                    +" pc (SNR = "+str(np.round(TDSSprop.gaia_parallax[TDSS_file_index]/TDSSprop.gaia_parallax_error[TDSS_file_index],2))+") | GaiaDR2 PMtot = "+str(np.round(TDSSprop.gaia_pmTOT[TDSS_file_index],2))
+                    +" mas/yr (SNR = "+str(np.round(TDSSprop.gaia_pmTOT[TDSS_file_index]/TDSSprop.gaia_pmTOT_error[TDSS_file_index], 2))+")")
     elif this_EqW > -2.0:
         EqW_string = ""
         plot_title = str("RA: "+ra_string+", DEC: "+dec_string+" | cz = "+str(cz)+"$\pm$"+str(cz_err)+" km s$^{-1}$ | SDSS Subclass = "
                     +str(subclass.split()[0])+"\n PyHammer = "+specTypeMatch+EqW_string+", RV = "+pyhammer_RV+" km s$^{-1}$"+"\n "
-                    +"DR | Plate = "+plate_string+" MJD = "+mjd_string+" Fiberid = "+fiberid_string+" | GaiaDR2 Dist = "+str(np.round(TDSSprop.gaia_dist[TDSS_file_index],2))
-                    +" pc ("+str(np.round(TDSSprop.gaia_parallax[TDSS_file_index]/TDSSprop.gaia_parallax_error[TDSS_file_index],2))+") | GaiaDR2 PMtot = "+str(np.round(TDSSprop.gaia_pmTOT[TDSS_file_index],2))
-                    +" mas/yr ("+str(np.round(TDSSprop.gaia_pmTOT[TDSS_file_index]/TDSSprop.gaia_pmTOT_error[TDSS_file_index], 2))+")")
+                    +"DR | Plate = "+plate_string+" MJD = "+mjd_string+" Fiberid = "+fiberid_string+" | GaiaDR2 Dist = "+str(np.int(np.round(TDSSprop.gaia_dist[TDSS_file_index],2)))
+                    +" pc (SNR="+str(np.round(TDSSprop.gaia_parallax[TDSS_file_index]/TDSSprop.gaia_parallax_error[TDSS_file_index],2))+") | GaiaDR2 PMtot = "+str(np.round(TDSSprop.gaia_pmTOT[TDSS_file_index],2))
+                    +" mas/yr (SNR = "+str(np.round(TDSSprop.gaia_pmTOT[TDSS_file_index]/TDSSprop.gaia_pmTOT_error[TDSS_file_index], 2))+")")
     else:
         EqW_string = "e"
         this_EqW_str = str(np.round(this_EqW,2))
         plot_title = str("RA: "+ra_string+", DEC: "+dec_string+" | cz = "+str(cz)+"$\pm$"+str(cz_err)+" km s$^{-1}$ | SDSS Subclass = "
                     +str(subclass.split()[0])+"\n PyHammer = "+specTypeMatch+EqW_string+", RV = "+pyhammer_RV+" km s$^{-1}$, EQW = "+this_EqW_str+"\n "
-                    +"DR | Plate = "+plate_string+" MJD = "+mjd_string+" Fiberid = "+fiberid_string+" | GaiaDR2 Dist = "+str(np.round(TDSSprop.gaia_dist[TDSS_file_index],2))
-                    +" pc ("+str(np.round(TDSSprop.gaia_parallax[TDSS_file_index]/TDSSprop.gaia_parallax_error[TDSS_file_index],2))+") | GaiaDR2 PMtot = "+str(np.round(TDSSprop.gaia_pmTOT[TDSS_file_index],2))
-                    +" mas/yr ("+str(np.round(TDSSprop.gaia_pmTOT[TDSS_file_index]/TDSSprop.gaia_pmTOT_error[TDSS_file_index], 2))+")")
+                    +"DR | Plate = "+plate_string+" MJD = "+mjd_string+" Fiberid = "+fiberid_string+" | GaiaDR2 Dist = "+str(np.int(np.round(TDSSprop.gaia_dist[TDSS_file_index],2)))
+                    +" pc (SNR = "+str(np.round(TDSSprop.gaia_parallax[TDSS_file_index]/TDSSprop.gaia_parallax_error[TDSS_file_index],2))+") | GaiaDR2 PMtot = "+str(np.round(TDSSprop.gaia_pmTOT[TDSS_file_index],2))
+                    +" mas/yr (SNR = "+str(np.round(TDSSprop.gaia_pmTOT[TDSS_file_index]/TDSSprop.gaia_pmTOT_error[TDSS_file_index], 2))+")")
 
     lam8000_index =  np.where(np.abs(smooth_wavelength-8000.0) == np.abs(smooth_wavelength-8000.0).min())[0][0]
     current_spec_flux_at_8000 = smooth_flux[lam8000_index]
@@ -695,24 +695,24 @@ def plot_SDSS_prop_spec(plate, mjd, fiberid, object_color, object_SDSS_Mr, TDSSp
         EqW_string = ""
         plot_title = str("RA: "+ra_string+", DEC: "+dec_string+" | cz = "+str(cz[index])+"$\pm$"+str(cz_err[index])+" km s$^{-1}$ | SDSS Subclass = "
                     +str(subclass[index]).split()[0]+"\n PyHammer = "+specTypeMatch+EqW_string+", RV = "+pyhammer_RV+" km s$^{-1}$"+"\n "
-                    +"prop. | Plate = "+plate_string+" MJD = "+mjd_string+" Fiberid = "+fiberid_string+" | GaiaDR2 Dist = "+str(np.round(TDSSprop.gaia_dist[TDSS_file_index],2))
-                    +" pc ("+str(np.round(TDSSprop.gaia_parallax[TDSS_file_index]/TDSSprop.gaia_parallax_error[TDSS_file_index],2))+") | GaiaDR2 PMtot = "+str(np.round(TDSSprop.gaia_pmTOT[TDSS_file_index],2))
-                    +" mas/yr ("+str(np.round(TDSSprop.gaia_pmTOT[TDSS_file_index]/TDSSprop.gaia_pmTOT_error[TDSS_file_index], 2))+")")
+                    +"prop. | Plate = "+plate_string+" MJD = "+mjd_string+" Fiberid = "+fiberid_string+" | GaiaDR2 Dist = "+str(np.int(np.round(TDSSprop.gaia_dist[TDSS_file_index],2)))
+                    +" pc (SNR = "+str(np.round(TDSSprop.gaia_parallax[TDSS_file_index]/TDSSprop.gaia_parallax_error[TDSS_file_index],2))+") | GaiaDR2 PMtot = "+str(np.round(TDSSprop.gaia_pmTOT[TDSS_file_index],2))
+                    +" mas/yr (SNR = "+str(np.round(TDSSprop.gaia_pmTOT[TDSS_file_index]/TDSSprop.gaia_pmTOT_error[TDSS_file_index], 2))+")")
     elif this_EqW > -2.0:
         EqW_string = ""
         plot_title = str("RA: "+ra_string+", DEC: "+dec_string+" | cz = "+str(cz[index])+"$\pm$"+str(cz_err[index])+" km s$^{-1}$ | SDSS Subclass = "
                     +str(subclass[index]).split()[0]+"\n PyHammer = "+specTypeMatch+EqW_string+", RV = "+pyhammer_RV+" km s$^{-1}$"+"\n "
-                    +"prop. | Plate = "+plate_string+" MJD = "+mjd_string+" Fiberid = "+fiberid_string+" | GaiaDR2 Dist = "+str(np.round(TDSSprop.gaia_dist[TDSS_file_index],2))
-                    +" pc ("+str(np.round(TDSSprop.gaia_parallax[TDSS_file_index]/TDSSprop.gaia_parallax_error[TDSS_file_index],2))+") | GaiaDR2 PMtot = "+str(np.round(TDSSprop.gaia_pmTOT[TDSS_file_index],2))
-                    +" mas/yr ("+str(np.round(TDSSprop.gaia_pmTOT[TDSS_file_index]/TDSSprop.gaia_pmTOT_error[TDSS_file_index], 2))+")")
+                    +"prop. | Plate = "+plate_string+" MJD = "+mjd_string+" Fiberid = "+fiberid_string+" | GaiaDR2 Dist = "+str(np.int(np.round(TDSSprop.gaia_dist[TDSS_file_index],2)))
+                    +" pc (SNR = "+str(np.round(TDSSprop.gaia_parallax[TDSS_file_index]/TDSSprop.gaia_parallax_error[TDSS_file_index],2))+") | GaiaDR2 PMtot = "+str(np.round(TDSSprop.gaia_pmTOT[TDSS_file_index],2))
+                    +" mas/yr (SNR = "+str(np.round(TDSSprop.gaia_pmTOT[TDSS_file_index]/TDSSprop.gaia_pmTOT_error[TDSS_file_index], 2))+")")
     else:
         EqW_string = "e"
         this_EqW_str = str(np.round(this_EqW,2))
         plot_title = str("RA: "+ra_string+", DEC: "+dec_string+" | cz = "+str(cz[index])+"$\pm$"+str(cz_err[index])+" km s$^{-1}$ | SDSS Subclass = "
                     +str(subclass[index]).split()[0]+"\n PyHammer = "+specTypeMatch+EqW_string+", RV = "+pyhammer_RV+" km s$^{-1}$, EQW = "+this_EqW_str+"\n "
-                    +"prop. | Plate = "+plate_string+" MJD = "+mjd_string+" Fiberid = "+fiberid_string+" | GaiaDR2 Dist = "+str(np.round(TDSSprop.gaia_dist[TDSS_file_index],2))
-                    +" pc ("+str(np.round(TDSSprop.gaia_parallax[TDSS_file_index]/TDSSprop.gaia_parallax_error[TDSS_file_index],2))+") | GaiaDR2 PMtot = "+str(np.round(TDSSprop.gaia_pmTOT[TDSS_file_index],2))
-                    +" mas/yr ("+str(np.round(TDSSprop.gaia_pmTOT[TDSS_file_index]/TDSSprop.gaia_pmTOT_error[TDSS_file_index], 2))+")")
+                    +"prop. | Plate = "+plate_string+" MJD = "+mjd_string+" Fiberid = "+fiberid_string+" | GaiaDR2 Dist = "+str(np.int(np.round(TDSSprop.gaia_dist[TDSS_file_index],2)))
+                    +" pc (SNR = "+str(np.round(TDSSprop.gaia_parallax[TDSS_file_index]/TDSSprop.gaia_parallax_error[TDSS_file_index],2))+") | GaiaDR2 PMtot = "+str(np.round(TDSSprop.gaia_pmTOT[TDSS_file_index],2))
+                    +" mas/yr (SNR = "+str(np.round(TDSSprop.gaia_pmTOT[TDSS_file_index]/TDSSprop.gaia_pmTOT_error[TDSS_file_index], 2))+")")
 
     lam8000_index =  np.where(np.abs(smooth_wavelength-8000.0) == np.abs(smooth_wavelength-8000.0).min())[0][0]
     current_spec_flux_at_8000 = smooth_flux[lam8000_index]
@@ -813,7 +813,7 @@ def plot_CMD(xi, yi, zi, object_color, object_color_errs, object_absM, object_ab
 
     plt_ax.errorbar(object_color, object_absM, xerr=object_color_errs, yerr=object_absM_errs,uplims=True, lolims=False, color='red', marker="+", markersize= 5, zorder=10)
 
-    title_str = "M$_i$ = {!s} \n g-i = {!s} \n UpperLim Dist = {!s} pc \n LowerLim Mi = {!s}".format(np.round(object_absM,2), np.round(object_color,2),np.round(upperLimDist,2), np.round(lowerLim_M,2))
+    title_str = "M$_i$ = {!s} \n g-i = {!s} \n UpperLim Dist = {!s} pc \n LowerLim Mi = {!s}".format(np.round(object_absM,2), np.round(object_color,2),np.int(np.round(upperLimDist,2)), np.round(lowerLim_M,2))
     plt_ax.set_title(title_str, fontsize=12)
 
 def plot_middle(css_id, latestFullVartoolsRun, xi, yi, zi, plt_ax):
@@ -1034,10 +1034,10 @@ class TDSSprop:
         self.TDSS_fiberids = self.TDSS_fibderid
         self.TDSS_fiberids[self.TDSS_plate_dr14 > 0] = self.TDSS_fibderid_dr14[self.TDSS_plate_dr14 > 0]
         self.TDSS_coords = coords.SkyCoord(ra=self.TDSS_ra*u.degree, dec=self.TDSS_dec*u.degree, frame='icrs')
-        self.DR14_spec_filenames = np.genfromtxt("list_of_all_DR14_spec.txt",dtype="U")
-        self.prop_spec_filenames = np.genfromtxt("list_of_all_prop_spec.txt",dtype="U")        
+        self.DR14_spec_filenames = np.genfromtxt("sup_data/list_of_all_DR14_spec.txt",dtype="U")
+        self.prop_spec_filenames = np.genfromtxt("sup_data/list_of_all_prop_spec.txt",dtype="U")        
         self.Drake_index = np.where(np.isnan(TDSS_prop.data.field('Period_(days)')) == False)[0]
-        self.Drake_num_to_vartype = np.genfromtxt(self.Vi_dir+"Vi_program/"+"darke_var_types.txt", dtype="U", comments="#", delimiter=",")
+        self.Drake_num_to_vartype = np.genfromtxt("sup_data/"+"darke_var_types.txt", dtype="U", comments="#", delimiter=",")
         self.D_Per = TDSS_prop.data.field('Period_(days)')
         self.D_Amp = TDSS_prop.data.field('Amplitude')
         self.vartype_num = TDSS_prop.data.field('Var_Type')
