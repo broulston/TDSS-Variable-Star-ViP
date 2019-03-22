@@ -1,6 +1,6 @@
-# TDSS Variable Star Vi
+# TDSS Variable Star ViP
 
-`TDSS Vi` creates one (1) plot for each of the variable stars in the program sample. These plots are designed  to help summarize  as much information about each star as possible, and to aid in classification. Each plot currently contains: 
+`TDSS ViP` creates one (1) plot for each of the variable stars in the TDSS program sample. These plots are designed to help summarize as much information about each star as possible, and to aid in classification. Each plot currently contains: 
 
 ![Vi_plot](./000.04023+005.77216_Vi.png?raw=true)
 
@@ -11,7 +11,7 @@
 3. Color-Magnitude diagram based on SDSS colors and Gaia DR2 distances. This plot also uses an upperLim on the distance by assuming a space velocity of 600 km s$^{-1}$ and using GaiaDR2 proper motions to find the distance. This gives us a lowerLim on M$_{i}$, which is shown above the CMD and as a red arrow in the CMD plot.
 4. SDSS spectrum with properties printed (this includes information from `PyHammer`)
 
-These plots are created using the `Vi` code written by Ben Roulston (BU/SAO). In addition to these plots, the Vi code also creates a `.csv` file that contains information about the light curves for each star from the `Vartools` program. The `Vartools` program also saves the phase folded light curve for **EVERY** star as well (even though it is not plotted or used for every star). 
+These plots are created using the `ViP` code written by Ben Roulston (BU/SAO). In addition to these plots, the Vi code also creates a `.csv` file that contains information about the light curves for each star from the `Vartools` program. The `Vartools` program also saves the phase folded light curve for **EVERY** star as well (even though it is not plotted or used for every star). 
 
 The main functions of the program (which call `Vartools` and creates the figures) are in the `VarStar_Vi_plot_functions.py` file. In order to run this Vi program, the following items are needed and **MUST** be downloaded/created/known before any figures can be made.
 
