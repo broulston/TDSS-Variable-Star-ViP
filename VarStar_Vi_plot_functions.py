@@ -325,8 +325,8 @@ def plot_CSS_LC_Drake(css_id, LC_OutDir, vartools_command, vartools_command_whit
             title_line1 = 'CSS ID: {!s} | P={!s} \n logProb={!s} | Amp={!s}  \n ngood={!s} | nreject={!s} \n nabove={!s} ({!s}%) | nbelow={!s} ({!s}%) \n'.format(lc_id, Per_ls+"w", logProb_ls, Amp_ls, nfmag, rejects, nabove, np.int(np.round((nabove/nmag)*100,2)), nbelow, np.int(np.round((nbelow/nmag)*100,2)))
         else:
             title_line1 = 'CSS ID: {!s} | P={!s} \n logProb={!s} | Amp={!s}  \n ngood={!s} | nreject={!s} \n nabove={!s} ({!s}%) | nbelow={!s} ({!s}%) \n'.format(lc_id, Per_ls, logProb_ls, Amp_ls, nfmag, rejects, nabove, np.int(np.round((nabove/nmag)*100,2)), nbelow, np.int(np.round((nbelow/nmag)*100,2)))
-        #title_line2 = 'Drake: P={!s} | Amp={!s} | VarType={!s} | Subclass={!s}'.format(D_Per, D_Amp, D_Vartype, D_sub)
-        title_str = title_line1 #+title_line2
+        title_line2 = 'Drake: P={!s} | Amp={!s} | VarType={!s}'.format(D_Per, D_Amp, D_Vartype)
+        title_str = title_line1 +" \n "+ title_line2
         plt_ax.set_title(title_str, fontsize=12)
         plt_ax.set_xlabel('Phase')
         plt_ax.set_ylabel('mag')
@@ -367,10 +367,11 @@ def plot_CSS_LC_Drake(css_id, LC_OutDir, vartools_command, vartools_command_whit
         #plt_ax.legend(loc='upper right', fontsize=8)
         plt_ax.invert_yaxis() # flip the y-axis so fainter mags are on bottom
 
-    prop_header = "lc_id, Per_ls, logProb_ls, Amp_ls, Mt, a95, lc_skew, Chi2, brtcutoff, brt10per, fnt10per, fntcutoff, errmn, ferrmn, rejects, nabove, nbelow"
+    prop_header = "lc_id, Per_ls, logProb_ls, Amp_ls, Mt, a95, lc_skew, Chi2, brtcutoff, brt10per,\
+                   fnt10per, fntcutoff, errmn, ferrmn, ngood, nrejects, nabove, nbelow, Eqw"
     if runVartools:
         properties = np.array([lc_id, Per_ls, logProb_ls, Amp_ls, Mt, a95, lc_skew, Chi2, 
-                               brtcutoff, brt10per, fnt10per, fntcutoff, errmn, ferrmn, rejects, nabove, nbelow])
+                               brtcutoff, brt10per, fnt10per, fntcutoff, errmn, ferrmn, nfmag, rejects, nabove, nbelow])
     else:
         dataFrameIndex = np.where(latestFullVartoolsRun.lc_id == lc_id)[0][0]
         #properties = latestFullVartoolsRun.values[dataFrameIndex, 2:]
@@ -955,9 +956,9 @@ def checkViRun(TDSS_cssid, Vi_dir="/Users/benjaminroulston/Dropbox/Research/TDSS
         last_CSS_ID_index = np.where(TDSS_cssid_copy == last_CSS_ID)[0][0]
         TDSS_cssid_copy = TDSS_cssid_copy[last_CSS_ID_index+1:]
         prop_id = index_where_left_off
-        return True, prop_id, TDSS_cssid_copy
+        return True, prop_id, TDSS_cssid_copy, properties
     else:
-        return False, 0, TDSS_cssid
+        return False, 0, TDSS_cssid, None
 
 def getLCs(main_lc_data_files_path="/Users/benjaminroulston/Dropbox/Research/TDSS/Variable_Stars/HARD_COPY_ORGINAL_DATA/CSS_LCs/csvs/"):
     csv_paths = [file for file in glob.glob(main_lc_data_files_path+"*.dat")]
@@ -978,7 +979,7 @@ class TDSSprop:
         from astropy.io import fits
         from astropy import coordinates as coords
         self.nbins = nbins
-        TDSS_prop = fits.open(self.main_TDSS_file_path+"TDSS_SES+PREV_DR12griLT20_GaiaDR2_CSSPerVar_spTypes2_postVI_dist_nsc_CSSid_Vartools_PyHammer_2019-03-04.fits")
+        TDSS_prop = fits.open(self.main_TDSS_file_path+"TDSS_SES+PREV_DR12griLT20_GaiaDR2_CSSPerVar_spTypes2_postVI_dist_nsc_CSSid_PyHammer_2019-03-21.fits")
         TDSS_prop = TDSS_prop[1]
         self.TDSS_cssid = TDSS_prop.data.field('CSS_ID').astype(int)
         self.gaia_bp_rp = TDSS_prop.data.field('bp_rp')

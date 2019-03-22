@@ -76,20 +76,26 @@ dec = ra_dec_css_ID[:,2]
 #***********************************************
 TDSSprop = vi.TDSSprop(nbins)
 #***********************************************
-prop_header = "ra, dec, lc_id, Per_ls, logProb_ls, Amp_ls, Mt, a95, lc_skew, Chi2, brtcutoff, brt10per, fnt10per, fntcutoff, errmn, ferrmn, ngood, nrejects, nabove, nbelow, Eqw"
-properties = np.empty((csv_raw_ids.size,21))
-#***********************************************
 latestFullVartoolsRun_filename = "completed_Vi_prop_2019-02-04.csv"
 latestFullVartoolsRun = vi.latestFullVartoolsRun(latestFullVartoolsRun_filename=prop_out_dir+latestFullVartoolsRun_filename)
 #***********************************************
-TDSS_cssid = TDSSprop.TDSS_cssid
+TDSS_cssid_orginal = TDSSprop.TDSS_cssid
+prop_header = "ra, dec, lc_id, Per_ls, logProb_ls, Amp_ls, Mt, a95, lc_skew, Chi2, brtcutoff, brt10per,\
+               fnt10per, fntcutoff, errmn, ferrmn, ngood, nrejects, nabove, nbelow, Eqw"
 
-hasViRun, prop_id, TDSS_cssid = vi.checkViRun(TDSS_cssid)#if Vi has run, this will find where it let off and continue propid from there
+hasViRun, prop_id, TDSS_cssid, properties = vi.checkViRun(TDSS_cssid_orginal)#if Vi has run, this will find where it let off and continue propid from there
 
+if hasViRun:
+    pass
+else:
+    properties = np.empty((csv_raw_ids.size,21))
+    prop_id = 0
+    TDSS_cssid = TDSS_cssid_orginal.copy()
+
+#***********************************************
 #random_index_to_plot = np.random.randint(low=0, high=TDSS_cssid.size, size=500)
 #from_here_TDSS_cssid = TDSS_cssid[random_index_to_plot][194:]
 runVartools = True
-prop_id = 0
 importlib.reload(vi)  
 for css_id_num in TDSS_cssid:
     css_id = main_lc_data_files_path+str(css_id_num)+".dat"
@@ -97,7 +103,7 @@ for css_id_num in TDSS_cssid:
     object_index = np.where(css_ids == css_id_num)[0][0]
     object_ra = ra[object_index]
     object_dec = dec[object_index]
-    TDSS_file_index = np.where(TDSS_cssid == css_id_num)[0][0]
+    TDSS_file_index = np.where(TDSS_cssid_orginal == css_id_num)[0][0]
     is_Drake = np.isin(TDSS_file_index,TDSSprop.Drake_index)
     ra_string = '{:0>9.5f}'.format(object_ra)
     dec_string = '{:0=+10.5f}'.format(object_dec)
@@ -123,7 +129,7 @@ for css_id_num in TDSS_cssid:
         D_Per = TDSSprop.D_Per[TDSS_file_index]
         D_Amp = TDSSprop.D_Amp[TDSS_file_index]
         vartype_num = str(TDSSprop.vartype_num[TDSS_file_index])
-        vartype_index = np.where(Drake_num_to_vartype[:,0] == vartype_num)[0][0]
+        vartype_index = np.where(TDSSprop.Drake_num_to_vartype[:,0] == vartype_num)[0][0]
         D_Vartype = TDSSprop.Drake_num_to_vartype[vartype_index,1].strip()
         #D_sub = TDSS_prop.data.field('SUBCLASS')[TDSS_file_index].replace("+"," ").split()[0]
         properties[prop_id,2:-1] = vi.plot_CSS_LC_Drake(css_id, lc_dir, vartools_command, vartools_command_whitten, vartools_command_whitten2, vt_outdir, main_lc_data_files_path, D_Per, D_Amp, D_Vartype, ax1, runVartools=runVartools, latestFullVartoolsRun=latestFullVartoolsRun)
