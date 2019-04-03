@@ -1,5 +1,13 @@
 # TDSS Variable Star ViP
 
+[![GitHub release](https://img.shields.io/github/release-pre/broulston/TDSS-Variable-Star-ViP.svg)](https://github.com/broulston/TDSS-Variable-Star-ViP/releases/latest)
+[![GitHub commits](https://img.shields.io/github/commits-since/broulston/TDSS-Variable-Star-ViP/v1.0.0.svg)](https://github.com/broulston/TDSS-Variable-Star-ViP/commits/master)
+[![GitHub issues](https://img.shields.io/github/issues/broulston/TDSS-Variable-Star-ViP.svg)](https://github.com/broulston/TDSS-Variable-Star-ViP/issues)
+[![license](https://img.shields.io/github/license/broulston/TDSS-Variable-Star-ViP.svg)](https://github.com/broulston/TDSS-Variable-Star-ViP/blob/master/license.txt)
+[![Python Supported](https://img.shields.io/badge/Python%20Supported-3-brightgreen.svg)](conda)
+[![Maintenance](https://img.shields.io/maintenance/yes/2019.svg)]()
+[![Powered by Astropy](https://img.shields.io/badge/powered%20by-AstroPy-orange.svg?style=flat)](http://www.astropy.org)
+
 `TDSS ViP` creates one (1) plot for each of the variable stars in the TDSS program sample. These plots are designed to help summarize as much information about each star as possible, and to aid in classification. Each plot currently contains: 
 
 ![Vi_plot](./000.04023+005.77216_Vi.png?raw=true)
