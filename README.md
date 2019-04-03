@@ -1,6 +1,6 @@
 # TDSS Variable Star ViP
 
-[![GitHub release](https://img.shields.io/github/release-pre/broulston/TDSS-Variable-Star-ViP.svg)](https://github.com/broulston/TDSS-Variable-Star-ViP/releases/latest)
+[![GitHub release](https://img.shields.io/github/release/broulston/TDSS-Variable-Star-ViP.svg)](https://github.com/broulston/TDSS-Variable-Star-ViP/releases/latest)
 [![GitHub commits](https://img.shields.io/github/commits-since/broulston/TDSS-Variable-Star-ViP/v1.0.0.svg)](https://github.com/broulston/TDSS-Variable-Star-ViP/commits/master)
 [![GitHub issues](https://img.shields.io/github/issues/broulston/TDSS-Variable-Star-ViP.svg)](https://github.com/broulston/TDSS-Variable-Star-ViP/issues)
 [![license](https://img.shields.io/github/license/broulston/TDSS-Variable-Star-ViP.svg)](https://github.com/broulston/TDSS-Variable-Star-ViP/blob/master/license.txt)
