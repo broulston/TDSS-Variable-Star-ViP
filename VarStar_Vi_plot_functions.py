@@ -89,7 +89,9 @@ def plot_CSS_LC_noDrake(css_id, LC_OutDir, vartools_command, vartools_command_wh
         log10_P = np.log10(Per_ls_num)
         sample_around_logP_region = 0.05
         is_alias = ((log10_P >= np.log10(0.5)-sample_around_logP_region) & (log10_P <= np.log10(0.5)+sample_around_logP_region)) or ((log10_P >= np.log10(1.0)-sample_around_logP_region) & (log10_P <= np.log10(1.0)+sample_around_logP_region))
+        times_is_alias = 0
         if is_alias:
+            times_is_alias += 1
             vt_callLS = vt_dir+'vartools -i '+lc_file+vartools_command_whitten#*******!
             vt_result = check_output(vt_callLS, shell=True)#*******!
             Per_ls = ('%6.3f' % float(vt_result.split()[5]))
@@ -99,6 +101,7 @@ def plot_CSS_LC_noDrake(css_id, LC_OutDir, vartools_command, vartools_command_wh
         log10_P = np.log10(Per_ls_num)
         is_alias2 = ((log10_P >= np.log10(0.5)-sample_around_logP_region) & (log10_P <= np.log10(0.5)+sample_around_logP_region)) or ((log10_P >= np.log10(1.0)-sample_around_logP_region) & (log10_P <= np.log10(1.0)+sample_around_logP_region))
         if is_alias2:
+            times_is_alias += 1
             vt_callLS = vt_dir+'vartools -i '+lc_file+vartools_command_whitten2#*******!
             vt_result = check_output(vt_callLS, shell=True)#*******!
             Per_ls = ('%6.3f' % float(vt_result.split()[9]))
@@ -114,6 +117,7 @@ def plot_CSS_LC_noDrake(css_id, LC_OutDir, vartools_command, vartools_command_wh
         Per_ls = latestFullVartoolsRun.all_Per_ls[dataFrameIndex]
         logProb_ls = latestFullVartoolsRun.all_logProb_ls[dataFrameIndex]
         Amp_ls = latestFullVartoolsRun.all_Amp_ls[dataFrameIndex]
+        times_is_alias = latestFullVartoolsRun.times_is_alias[dataFrameIndex]
         #all_a95 = latestFullVartoolsRun[' a95'].values[dataFrameIndex]
         #all_ChiSq = latestFullVartoolsRun[' Chi2'].values[dataFrameIndex]
         #all_skewness = latestFullVartoolsRun[' lc_skew'].values[dataFrameIndex]
@@ -146,12 +150,7 @@ def plot_CSS_LC_noDrake(css_id, LC_OutDir, vartools_command, vartools_command_wh
         plt_ax.axhline(fmagmn-3*ferrmn, color='g', ls='-.', lw=2 ,alpha=0.5)
         plt_ax.axhline(fmagmn+3*fmag_stdev, color='b', ls=':', lw=2,alpha=0.5, label='3X Mag StDev')
         plt_ax.axhline(fmagmn-3*fmag_stdev, color='b', ls=':', lw=2,alpha=0.5)
-        if is_alias & is_alias2:
-            title_line1 = 'CSS ID: {!s} | P={!s} \n logProb={!s} | Amp={!s} \n ngood={!s} | nreject={!s} \n nabove={!s} ({!s}%) | nbelow={!s} ({!s}%) \n'.format(lc_id, Per_ls+"ww", logProb_ls, Amp_ls, nfmag, rejects, nabove, np.int(np.round((nabove/nmag)*100,2)), nbelow, np.int(np.round((nbelow/nmag)*100,2)))
-        elif is_alias:
-            title_line1 = 'CSS ID: {!s} | P={!s} \n logProb={!s} | Amp={!s} \n ngood={!s} | nreject={!s} \n nabove={!s} ({!s}%) | nbelow={!s} ({!s}%) \n'.format(lc_id, Per_ls+"w", logProb_ls, Amp_ls, nfmag, rejects, nabove, np.int(np.round((nabove/nmag)*100,2)), nbelow, np.int(np.round((nbelow/nmag)*100,2)))
-        else:
-            title_line1 = 'CSS ID: {!s} | P={!s} \n logProb={!s} | Amp={!s} \n ngood={!s} | nreject={!s} \n nabove={!s} ({!s}%) | nbelow={!s} ({!s}%) \n'.format(lc_id, Per_ls, logProb_ls, Amp_ls, nfmag, rejects, nabove, np.int(np.round((nabove/nmag)*100,2)), nbelow, np.int(np.round((nbelow/nmag)*100,2)))
+        title_line1 = 'CSS ID: {!s} | P={!s} \n logProb={!s} | Amp={!s} \n ngood={!s} | nreject={!s} \n nabove={!s} ({!s}%) | nbelow={!s} ({!s}%) \n'.format(lc_id, str(Per_ls)+"w"*times_is_alias, logProb_ls, Amp_ls, nfmag, rejects, nabove, np.int(np.round((nabove/nmag)*100,2)), nbelow, np.int(np.round((nbelow/nmag)*100,2)))
         #title_line2 = 'Drake: P={!s} | Amp={!s} | VarType={!s} | Subclass={!s}'.format(D_Per, D_Amp, D_Vartype, D_sub)
         title_str = title_line1 #+title_line2
         plt_ax.set_title(title_str, fontsize=12)
@@ -180,23 +179,20 @@ def plot_CSS_LC_noDrake(css_id, LC_OutDir, vartools_command, vartools_command_wh
         plt_ax.axhline(fmagmn-3*fmag_stdev, color='b', ls=':', lw=2,alpha=0.5)
         # set plot labels
         #title_str = f'{lc_id} \n mean mag. = {fmagmn:0.2f}'
-        if is_alias:
-            title_line1 = 'CSS ID: {!s} | P={!s} \n logProb={!s} | Amp={!s} \n ngood={!s} | nreject={!s} \n nabove={!s} ({!s}%) | nbelow={!s} ({!s}%) \n'.format(lc_id, Per_ls+"w", logProb_ls, Amp_ls, nfmag, rejects, nabove, np.int(np.round((nabove/nmag)*100,2)), nbelow, np.int(np.round((nbelow/nmag)*100,2)))
-        else:
-            title_line1 = 'CSS ID: {!s} | P={!s} \n logProb={!s} | Amp={!s}  \n ngood={!s} | nreject={!s} \n nabove={!s} ({!s}%) | nbelow={!s} ({!s}%) \n'.format(lc_id, Per_ls, logProb_ls, Amp_ls, nfmag, rejects, nabove, np.int(np.round((nabove/nmag)*100,2)), nbelow, np.int(np.round((nbelow/nmag)*100,2)))
+        title_line1 = 'CSS ID: {!s} | P={!s} \n logProb={!s} | Amp={!s} \n ngood={!s} | nreject={!s} \n nabove={!s} ({!s}%) | nbelow={!s} ({!s}%) \n'.format(lc_id, str(Per_ls)+"w"*times_is_alias, logProb_ls, Amp_ls, nfmag, rejects, nabove, np.int(np.round((nabove/nmag)*100,2)), nbelow, np.int(np.round((nbelow/nmag)*100,2)))
         plt_ax.set_title(title_line1, fontsize=12)
         plt_ax.set_xlabel('MJD')
         plt_ax.set_ylabel('Mag')
         #plt_ax.legend(loc='upper right', fontsize=8)
         plt_ax.invert_yaxis() # flip the y-axis so fainter mags are on bottom
 
-    prop_header = "lc_id, Per_ls, logProb_ls, Amp_ls, Mt, a95, lc_skew, Chi2, brtcutoff, brt10per, fnt10per, fntcutoff, errmn, ferrmn, ngood, nrejects, nabove, nbelow"
+    prop_header = "lc_id, Per_ls, logProb_ls, Amp_ls, Mt, a95, lc_skew, Chi2, brtcutoff, brt10per, fnt10per, fntcutoff, errmn, ferrmn, ngood, nrejects, nabove, nbelow, isAlias"
     if runVartools:
         properties = np.array([lc_id, Per_ls, logProb_ls, Amp_ls, Mt, a95, lc_skew, Chi2, 
-                               brtcutoff, brt10per, fnt10per, fntcutoff, errmn, ferrmn, nfmag, rejects, nabove, nbelow])
+                               brtcutoff, brt10per, fnt10per, fntcutoff, errmn, ferrmn, nfmag, rejects, nabove, nbelow, times_is_alias])
     else:
-        dataFrameIndex = np.where(latestFullVartoolsRun[' lc_id'].values == lc_id)[0][0]
-        properties = latestFullVartoolsRun.latestFullVartoolsRun.values[dataFrameIndex,2:]
+        dataFrameIndex = np.where(latestFullVartoolsRun.lc_id == lc_id)[0][0]
+        properties = latestFullVartoolsRun.latestFullVartoolsRun.values[dataFrameIndex,2:-1]
         #properties = latestFullVartoolsRun.values[dataFrameIndex, 2:]
     return properties
 
@@ -264,8 +260,10 @@ def plot_CSS_LC_Drake(css_id, LC_OutDir, vartools_command, vartools_command_whit
         Per_ls_num = float(vt_result.split()[1])
         log10_P = np.log10(Per_ls_num)
         sample_around_logP_region = 0.05
+        times_is_alias = 0
         is_alias = ((log10_P >= np.log10(0.5)-sample_around_logP_region) & (log10_P <= np.log10(0.5)+sample_around_logP_region)) or ((log10_P >= np.log10(1.0)-sample_around_logP_region) & (log10_P <= np.log10(1.0)+sample_around_logP_region))
         if is_alias:
+            times_is_alias += 1
             vt_callLS = vt_dir+'vartools -i '+lc_file+vartools_command_whitten#*******!
             vt_result = check_output(vt_callLS, shell=True)#*******!
             Per_ls = ('%6.3f' % float(vt_result.split()[5]))
@@ -275,6 +273,7 @@ def plot_CSS_LC_Drake(css_id, LC_OutDir, vartools_command, vartools_command_whit
         log10_P = np.log10(Per_ls_num)
         is_alias2 = ((log10_P >= np.log10(0.5)-sample_around_logP_region) & (log10_P <= np.log10(0.5)+sample_around_logP_region)) or ((log10_P >= np.log10(1.0)-sample_around_logP_region) & (log10_P <= np.log10(1.0)+sample_around_logP_region))
         if is_alias2:
+            times_is_alias += 1
             vt_callLS = vt_dir+'vartools -i '+lc_file+vartools_command_whitten2#*******!
             vt_result = check_output(vt_callLS, shell=True)#*******!
             Per_ls = ('%6.3f' % float(vt_result.split()[9]))
@@ -290,6 +289,7 @@ def plot_CSS_LC_Drake(css_id, LC_OutDir, vartools_command, vartools_command_whit
         Per_ls = latestFullVartoolsRun.all_Per_ls[dataFrameIndex]
         logProb_ls = latestFullVartoolsRun.all_logProb_ls[dataFrameIndex]
         Amp_ls = latestFullVartoolsRun.all_Amp_ls[dataFrameIndex]
+        times_is_alias = latestFullVartoolsRun.times_is_alias[dataFrameIndex]
         #all_a95 = latestFullVartoolsRun[' a95'].values[dataFrameIndex]
         #all_ChiSq = latestFullVartoolsRun[' Chi2'].values[dataFrameIndex]
         #all_skewness = latestFullVartoolsRun[' lc_skew'].values[dataFrameIndex]
@@ -321,10 +321,7 @@ def plot_CSS_LC_Drake(css_id, LC_OutDir, vartools_command, vartools_command_whit
         plt_ax.axhline(fmagmn-3*ferrmn, color='g', ls='-.', lw=2 ,alpha=0.5)
         plt_ax.axhline(fmagmn+3*fmag_stdev, color='b', ls=':', lw=2,alpha=0.5, label='3X Mag StDev')
         plt_ax.axhline(fmagmn-3*fmag_stdev, color='b', ls=':', lw=2,alpha=0.5)
-        if is_alias:
-            title_line1 = 'CSS ID: {!s} | P={!s} \n logProb={!s} | Amp={!s}  \n ngood={!s} | nreject={!s} \n nabove={!s} ({!s}%) | nbelow={!s} ({!s}%) \n'.format(lc_id, Per_ls+"w", logProb_ls, Amp_ls, nfmag, rejects, nabove, np.int(np.round((nabove/nmag)*100,2)), nbelow, np.int(np.round((nbelow/nmag)*100,2)))
-        else:
-            title_line1 = 'CSS ID: {!s} | P={!s} \n logProb={!s} | Amp={!s}  \n ngood={!s} | nreject={!s} \n nabove={!s} ({!s}%) | nbelow={!s} ({!s}%) \n'.format(lc_id, Per_ls, logProb_ls, Amp_ls, nfmag, rejects, nabove, np.int(np.round((nabove/nmag)*100,2)), nbelow, np.int(np.round((nbelow/nmag)*100,2)))
+        title_line1 = 'CSS ID: {!s} | P={!s} \n logProb={!s} | Amp={!s}  \n ngood={!s} | nreject={!s} \n nabove={!s} ({!s}%) | nbelow={!s} ({!s}%) \n'.format(lc_id, str(Per_ls)+"w"*times_is_alias, logProb_ls, Amp_ls, nfmag, rejects, nabove, np.int(np.round((nabove/nmag)*100,2)), nbelow, np.int(np.round((nbelow/nmag)*100,2)))
         title_line2 = 'Drake: P={!s} | Amp={!s} | VarType={!s}'.format(D_Per, D_Amp, D_Vartype)
         title_str = title_line1 +" \n "+ title_line2
         plt_ax.set_title(title_str, fontsize=12)
@@ -353,12 +350,7 @@ def plot_CSS_LC_Drake(css_id, LC_OutDir, vartools_command, vartools_command_whit
         plt_ax.axhline(fmagmn-3*fmag_stdev, color='b', ls=':', lw=2,alpha=0.5)
         # set plot labels
         #title_str = f'{lc_id} \n mean mag. = {fmagmn:0.2f}'
-        if is_alias & is_alias2:
-            title_line1 = 'CSS ID: {!s} | P={!s} \n logProb={!s} | Amp={!s}  \n ngood={!s} | nreject={!s} \n nabove={!s} ({!s}%) | nbelow={!s} ({!s}%) \n'.format(lc_id, Per_ls+"ww", logProb_ls, Amp_ls, nfmag, rejects, nabove, np.int(np.round((nabove/nmag)*100,2)), nbelow, np.int(np.round((nbelow/nmag)*100,2)))
-        elif is_alias:
-            title_line1 = 'CSS ID: {!s} | P={!s} \n logProb={!s} | Amp={!s}  \n ngood={!s} | nreject={!s} \n nabove={!s} ({!s}%) | nbelow={!s} ({!s}%) \n'.format(lc_id, Per_ls+"w", logProb_ls, Amp_ls, nfmag, rejects, nabove, np.int(np.round((nabove/nmag)*100,2)), nbelow, np.int(np.round((nbelow/nmag)*100,2)))
-        else:
-            title_line1 = 'CSS ID: {!s} | P={!s} \n logProb={!s} | Amp={!s}  \n ngood={!s} | nreject={!s} \n nabove={!s} ({!s}%) | nbelow={!s} ({!s}%) \n'.format(lc_id, Per_ls, logProb_ls, Amp_ls, nfmag, rejects, nabove, np.int(np.round((nabove/nmag)*100,2)), nbelow, np.int(np.round((nbelow/nmag)*100,2)))
+        title_line1 = 'CSS ID: {!s} | P={!s} \n logProb={!s} | Amp={!s}  \n ngood={!s} | nreject={!s} \n nabove={!s} ({!s}%) | nbelow={!s} ({!s}%) \n'.format(lc_id, str(Per_ls)+"w"*times_is_alias, logProb_ls, Amp_ls, nfmag, rejects, nabove, np.int(np.round((nabove/nmag)*100,2)), nbelow, np.int(np.round((nbelow/nmag)*100,2)))
         title_line2 = 'Drake: P={!s} | Amp={!s} | VarType={!s} '.format(D_Per, D_Amp, D_Vartype)
         #title_line2 = 'Drake: P={!s} | Amp={!s} | VarType={!s} | Subclass={!s}'.format(D_Per, D_Amp, D_Vartype, D_sub)
         plt_ax.set_title(title_line1+" \n "+title_line2, fontsize=12)
@@ -368,14 +360,14 @@ def plot_CSS_LC_Drake(css_id, LC_OutDir, vartools_command, vartools_command_whit
         plt_ax.invert_yaxis() # flip the y-axis so fainter mags are on bottom
 
     prop_header = "lc_id, Per_ls, logProb_ls, Amp_ls, Mt, a95, lc_skew, Chi2, brtcutoff, brt10per,\
-                   fnt10per, fntcutoff, errmn, ferrmn, ngood, nrejects, nabove, nbelow, Eqw"
+                   fnt10per, fntcutoff, errmn, ferrmn, ngood, nrejects, nabove, nbelow, isAlias, Eqw"
     if runVartools:
         properties = np.array([lc_id, Per_ls, logProb_ls, Amp_ls, Mt, a95, lc_skew, Chi2, 
-                               brtcutoff, brt10per, fnt10per, fntcutoff, errmn, ferrmn, nfmag, rejects, nabove, nbelow])
+                               brtcutoff, brt10per, fnt10per, fntcutoff, errmn, ferrmn, nfmag, rejects, nabove, nbelow, times_is_alias])
     else:
         dataFrameIndex = np.where(latestFullVartoolsRun.lc_id == lc_id)[0][0]
         #properties = latestFullVartoolsRun.values[dataFrameIndex, 2:]
-        properties = latestFullVartoolsRun.latestFullVartoolsRun.values[dataFrameIndex,2:]
+        properties = latestFullVartoolsRun.latestFullVartoolsRun.values[dataFrameIndex,2:-1]
 
     return properties
 
@@ -1064,6 +1056,8 @@ class latestFullVartoolsRun:
         self.all_a95 = self.latestFullVartoolsRun[' a95'].values[:self.dataFrame_all_Index]
         self.all_ChiSq = self.latestFullVartoolsRun[' Chi2'].values[:self.dataFrame_all_Index]
         self.all_skewness = self.latestFullVartoolsRun[' lc_skew'].values[:self.dataFrame_all_Index]
+        self.Mt = self.latestFullVartoolsRun[' Mt'].values[:self.dataFrame_all_Index]
+        self.times_is_alias = self.latestFullVartoolsRun[' isAlias'].values[:self.dataFrame_all_Index]
         self.where_periodic = np.where(self.all_logProb_ls <= -10.0)[0]
         self.where_not_periodic = np.where(self.all_logProb_ls > -10.0)[0]
         self.log_all_ChiSq = np.log(self.all_ChiSq[self.where_not_periodic])

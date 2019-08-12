@@ -28,6 +28,8 @@ import mimic_alpha as ma
 import VarStar_Vi_plot_functions as vi
 import importlib
 
+runVartools = False
+
 vt_dir = '/usr/local/bin/'
 Vi_dir = "/Users/benjaminroulston/Dropbox/Research/TDSS/Variable_Stars/WORKING_DIRECTORY/Vi/"
 
@@ -76,26 +78,25 @@ dec = ra_dec_css_ID[:,2]
 #***********************************************
 TDSSprop = vi.TDSSprop(nbins)
 #***********************************************
-latestFullVartoolsRun_filename = "completed_Vi_prop_2019-02-04.csv"
+latestFullVartoolsRun_filename = "completed_Vi_prop_2019-03-22.csv"
 latestFullVartoolsRun = vi.latestFullVartoolsRun(latestFullVartoolsRun_filename=prop_out_dir+latestFullVartoolsRun_filename)
 #***********************************************
 TDSS_cssid_orginal = TDSSprop.TDSS_cssid
 prop_header = "ra, dec, lc_id, Per_ls, logProb_ls, Amp_ls, Mt, a95, lc_skew, Chi2, brtcutoff, brt10per,\
-               fnt10per, fntcutoff, errmn, ferrmn, ngood, nrejects, nabove, nbelow, Eqw"
+               fnt10per, fntcutoff, errmn, ferrmn, ngood, nrejects, nabove, nbelow, isAlias, Eqw"
 
 hasViRun, prop_id, TDSS_cssid, properties = vi.checkViRun(TDSS_cssid_orginal)#if Vi has run, this will find where it let off and continue propid from there
 
 if hasViRun:
     pass
 else:
-    properties = np.empty((csv_raw_ids.size,21))
+    properties = np.empty((csv_raw_ids.size,22))
     prop_id = 0
     TDSS_cssid = TDSS_cssid_orginal.copy()
 
 #***********************************************
 #random_index_to_plot = np.random.randint(low=0, high=TDSS_cssid.size, size=500)
 #from_here_TDSS_cssid = TDSS_cssid[random_index_to_plot][194:]
-runVartools = True
 importlib.reload(vi)  
 for css_id_num in TDSS_cssid:
     css_id = main_lc_data_files_path+str(css_id_num)+".dat"
@@ -175,11 +176,11 @@ for css_id_num in TDSS_cssid:
     #plt.show()
     plt.clf()
     plt.close()
-    np.savetxt(prop_out_dir+"completed_Vi_prop_"+datestr+".csv", properties, delimiter=",", header=prop_header, fmt="%f, %f, %i, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f")
+    np.savetxt(prop_out_dir+"completed_Vi_prop_"+datestr+".csv", properties, delimiter=",", header=prop_header, fmt="%f, %f, %i, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %i,  %f")
     prop_id += 1
 
 
-np.savetxt(prop_out_dir+"completed_Vi_prop_"+datestr+".csv", properties, delimiter=",", header=prop_header,     fmt="%f, %f, %i, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f")
+np.savetxt(prop_out_dir+"completed_Vi_prop_"+datestr+".csv", properties, delimiter=",", header=prop_header,     fmt="%f, %f, %i, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %i, %f")
 
 
 
