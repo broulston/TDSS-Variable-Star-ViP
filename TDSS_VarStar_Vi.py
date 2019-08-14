@@ -1,3 +1,7 @@
+import matplotlib
+
+matplotlib.use('TkAGG')
+
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 from matplotlib.gridspec import GridSpec
@@ -28,7 +32,7 @@ import mimic_alpha as ma
 import VarStar_Vi_plot_functions as vi
 import importlib
 
-runVartools = False
+runVartools = True
 
 vt_dir = '/usr/local/bin/'
 Vi_dir = "/Users/benjaminroulston/Dropbox/Research/TDSS/Variable_Stars/WORKING_DIRECTORY/Vi/"
@@ -83,21 +87,22 @@ latestFullVartoolsRun = vi.latestFullVartoolsRun(latestFullVartoolsRun_filename=
 #***********************************************
 TDSS_cssid_orginal = TDSSprop.TDSS_cssid
 prop_header = "ra, dec, lc_id, Per_ls, logProb_ls, Amp_ls, Mt, a95, lc_skew, Chi2, brtcutoff, brt10per,\
-               fnt10per, fntcutoff, errmn, ferrmn, ngood, nrejects, nabove, nbelow, isAlias, Eqw"
+               fnt10per, fntcutoff, errmn, ferrmn, ngood, nrejects, nabove, nbelow, isAlias, VarStat, Con, m, b_lin, Chi2_Lin, a, b_quad, c, Chi2_Quad, Eqw"
 
 hasViRun, prop_id, TDSS_cssid, properties = vi.checkViRun(TDSS_cssid_orginal)#if Vi has run, this will find where it let off and continue propid from there
 
 if hasViRun:
     pass
 else:
-    properties = np.empty((csv_raw_ids.size,22))
+    properties = np.empty((csv_raw_ids.size,31))
     prop_id = 0
     TDSS_cssid = TDSS_cssid_orginal.copy()
 
 #***********************************************
 #random_index_to_plot = np.random.randint(low=0, high=TDSS_cssid.size, size=500)
 #from_here_TDSS_cssid = TDSS_cssid[random_index_to_plot][194:]
-importlib.reload(vi)  
+importlib.reload(vi)
+plt.ioff()  
 for css_id_num in TDSS_cssid:
     css_id = main_lc_data_files_path+str(css_id_num)+".dat"
     #css_id_num = np.int(css_id.rstrip(".dat").lstrip(main_lc_data_files_path))
@@ -120,7 +125,7 @@ for css_id_num in TDSS_cssid:
         dataFrameIndex = np.where(latestFullVartoolsRun.lc_id == css_id_num)[0][0]
     except IndexError:
         continue
-    fig = plt.figure(figsize=(12,9), constrained_layout=True)
+    fig = plt.figure(figsize=(13,9), constrained_layout=True)
     gs = GridSpec(2, 7, figure=fig, height_ratios=[1, 1], width_ratios=[1, 1, 1, 1, 0.4, 1, 1])#, hspace=0.3, wspace=0.5)
     ax1 = fig.add_subplot(gs[0, :2])#LC
     ax2 = fig.add_subplot(gs[0, 2:4])#SDSS DR12 Image
@@ -172,15 +177,15 @@ for css_id_num in TDSS_cssid:
     object_color_errs = TDSSprop.SDSS_gmi_err[TDSS_file_index]
     vi.plot_CMD(TDSSprop.xi, TDSSprop.yi, TDSSprop.zi, object_SDSS_gmi, object_color_errs, object_SDSS_Mi, object_absM_errs, TDSSprop.upperLimDist[TDSS_file_index], TDSSprop.lowerLimSDSS_M_i[TDSS_file_index], ax3)
     #plt.savefig(Vi_plots_dir+ra_string+dec_string+"_Vi.eps",dpi=600,bbox_inches='tight')
-    plt.savefig(Vi_plots_dir+ra_string+dec_string+"_Vi.png",dpi=600,bbox_inches='tight')
+    plt.savefig(Vi_plots_dir+ra_string+dec_string+"_Vi.png",dpi=300,bbox_inches='tight')
     #plt.show()
     plt.clf()
     plt.close()
-    np.savetxt(prop_out_dir+"completed_Vi_prop_"+datestr+".csv", properties, delimiter=",", header=prop_header, fmt="%f, %f, %i, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %i,  %f")
+    np.savetxt(prop_out_dir+"completed_Vi_prop_"+datestr+".csv", properties, delimiter=",", header=prop_header, fmt="%f, %f, %i, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %i, %f, %f, %f, %f, %f, %f, %f, %f, %f,  %f")
     prop_id += 1
 
 
-np.savetxt(prop_out_dir+"completed_Vi_prop_"+datestr+".csv", properties, delimiter=",", header=prop_header,     fmt="%f, %f, %i, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %i, %f")
+np.savetxt(prop_out_dir+"completed_Vi_prop_"+datestr+".csv", properties, delimiter=",", header=prop_header,     fmt="%f, %f, %i, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %i, %f, %f, %f, %f, %f, %f, %f, %f , %f, %f")
 
 
 
