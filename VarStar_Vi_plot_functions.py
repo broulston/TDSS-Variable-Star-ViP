@@ -56,6 +56,12 @@ def plot_CSS_LC_noDrake(css_id, LC_OutDir, vartools_command, vartools_command_wh
     flc_mag = flc_data['mag']
     flc_mjd = flc_data['MJD']
     flc_err = flc_data['mag_err']
+    p_lin, residuals_lin, rank_lin, singular_values_lin, rcond_lin = np.polyfit(flc_mjd, flc_mag, 1, rcond=None, full=True, w=None, cov=False)# linear fit to LC
+    p_quad, residuals_quad , rank_quad, singular_values_quad, rcond_quad = np.polyfit(flc_mjd, flc_mag, 2, rcond=None, full=True, w=None, cov=False)# Quadratic fit to LC
+    mean_error = np.nanmean(flc_err)
+    lc_std = np.nanstd(flc_mag)
+    var_stat = lc_std / mean_error
+    con = conStat(lc_mag)
     nfmag = len(flc_mag)
     fmagmed = np.median(flc_mag)
     fmagmn = np.mean(flc_mag)
@@ -150,7 +156,7 @@ def plot_CSS_LC_noDrake(css_id, LC_OutDir, vartools_command, vartools_command_wh
         plt_ax.axhline(fmagmn-3*ferrmn, color='g', ls='-.', lw=2 ,alpha=0.5)
         plt_ax.axhline(fmagmn+3*fmag_stdev, color='b', ls=':', lw=2,alpha=0.5, label='3X Mag StDev')
         plt_ax.axhline(fmagmn-3*fmag_stdev, color='b', ls=':', lw=2,alpha=0.5)
-        title_line1 = 'CSS ID: {!s} | P={!s} \n logProb={!s} | Amp={!s} \n ngood={!s} | nreject={!s} \n nabove={!s} ({!s}%) | nbelow={!s} ({!s}%) \n'.format(lc_id, str(Per_ls)+"w"*times_is_alias, logProb_ls, Amp_ls, nfmag, rejects, nabove, np.int(np.round((nabove/nmag)*100,2)), nbelow, np.int(np.round((nbelow/nmag)*100,2)))
+        title_line1 = 'CSS ID: {!s} | P={!s} | logProb={!s} \n Amp={!s} | ngood={!s} | nreject={!s}| Con={!s} \n nabove={!s} ({!s}%) | nbelow={!s} ({!s}%) | VarStat={!s} \n m={!s} | b={!s} | $\chi^2$={!s} \n a={!s} | b={!s} | c={!s} | $\chi^2$={!s}'.format(lc_id, str(Per_ls)+"w"*times_is_alias, logProb_ls, Amp_ls, nfmag, rejects, np.round(con,3), nabove, np.int(np.round((nabove/nmag)*100,2)), nbelow, np.int(np.round((nbelow/nmag)*100,2)), np.round(var_stat,2), np.round(p_lin[0],4), np.round(p_lin[1],4), np.round(residuals_lin[0],2), np.round(p_quad[0],4), np.round(p_quad[1],4), np.round(p_quad[2],4),np.round(residuals_quad[0],2))
         #title_line2 = 'Drake: P={!s} | Amp={!s} | VarType={!s} | Subclass={!s}'.format(D_Per, D_Amp, D_Vartype, D_sub)
         title_str = title_line1 #+title_line2
         plt_ax.set_title(title_str, fontsize=12)
@@ -179,17 +185,17 @@ def plot_CSS_LC_noDrake(css_id, LC_OutDir, vartools_command, vartools_command_wh
         plt_ax.axhline(fmagmn-3*fmag_stdev, color='b', ls=':', lw=2,alpha=0.5)
         # set plot labels
         #title_str = f'{lc_id} \n mean mag. = {fmagmn:0.2f}'
-        title_line1 = 'CSS ID: {!s} | P={!s} \n logProb={!s} | Amp={!s} \n ngood={!s} | nreject={!s} \n nabove={!s} ({!s}%) | nbelow={!s} ({!s}%) \n'.format(lc_id, str(Per_ls)+"w"*times_is_alias, logProb_ls, Amp_ls, nfmag, rejects, nabove, np.int(np.round((nabove/nmag)*100,2)), nbelow, np.int(np.round((nbelow/nmag)*100,2)))
+        title_line1 = 'CSS ID: {!s} | P={!s} | logProb={!s} \n Amp={!s} | ngood={!s} | nreject={!s}| Con={!s} \n nabove={!s} ({!s}%) | nbelow={!s} ({!s}%) | VarStat={!s} \n m={!s} | b={!s} | $\chi^2$={!s} \n a={!s} | b={!s} | c={!s} | $\chi^2$={!s}'.format(lc_id, str(Per_ls)+"w"*times_is_alias, logProb_ls, Amp_ls, nfmag, rejects, np.round(con,3), nabove, np.int(np.round((nabove/nmag)*100,2)), nbelow, np.int(np.round((nbelow/nmag)*100,2)), np.round(var_stat,2), np.round(p_lin[0],4), np.round(p_lin[1],4), np.round(residuals_lin[0],2), np.round(p_quad[0],4), np.round(p_quad[1],4), np.round(p_quad[2],4),np.round(residuals_quad[0],2))
         plt_ax.set_title(title_line1, fontsize=12)
         plt_ax.set_xlabel('MJD')
         plt_ax.set_ylabel('Mag')
         #plt_ax.legend(loc='upper right', fontsize=8)
         plt_ax.invert_yaxis() # flip the y-axis so fainter mags are on bottom
 
-    prop_header = "lc_id, Per_ls, logProb_ls, Amp_ls, Mt, a95, lc_skew, Chi2, brtcutoff, brt10per, fnt10per, fntcutoff, errmn, ferrmn, ngood, nrejects, nabove, nbelow, isAlias"
+    prop_header = "lc_id, Per_ls, logProb_ls, Amp_ls, Mt, a95, lc_skew, Chi2, brtcutoff, brt10per, fnt10per, fntcutoff, errmn, ferrmn, ngood, nrejects, nabove, nbelow, isAlias, VarStat, Con, m, b_lin, chi2_lin, a, b_quad, c, chi2_quad"
     if runVartools:
         properties = np.array([lc_id, Per_ls, logProb_ls, Amp_ls, Mt, a95, lc_skew, Chi2, 
-                               brtcutoff, brt10per, fnt10per, fntcutoff, errmn, ferrmn, nfmag, rejects, nabove, nbelow, times_is_alias])
+                               brtcutoff, brt10per, fnt10per, fntcutoff, errmn, ferrmn, nfmag, rejects, nabove, nbelow, times_is_alias, var_stat, con, p_lin[0], p_lin[1], residuals_lin, p_quad[0], p_quad[1], p_quad[2], residuals_quad])
     else:
         dataFrameIndex = np.where(latestFullVartoolsRun.lc_id == lc_id)[0][0]
         properties = latestFullVartoolsRun.latestFullVartoolsRun.values[dataFrameIndex,2:-1]
@@ -228,6 +234,12 @@ def plot_CSS_LC_Drake(css_id, LC_OutDir, vartools_command, vartools_command_whit
     flc_mag = flc_data['mag']
     flc_mjd = flc_data['MJD']
     flc_err = flc_data['mag_err']
+    p_lin, residuals_lin, rank_lin, singular_values_lin, rcond_lin = np.polyfit(flc_mjd, flc_mag, 1, rcond=None, full=True, w=None, cov=False)# linear fit to LC
+    p_quad, residuals_quad, rank_quad, singular_values_quad, rcond_quad = np.polyfit(flc_mjd, flc_mag, 2, rcond=None, full=True, w=None, cov=False)# Quadratic fit to LC
+    mean_error = np.nanmean(flc_err)
+    lc_std = np.nanstd(flc_mag)
+    var_stat = lc_std / mean_error
+    con = conStat(lc_mag)
     nfmag = len(flc_mag)
     fmagmed = np.median(flc_mag)
     fmagmn = np.mean(flc_mag)
@@ -321,7 +333,7 @@ def plot_CSS_LC_Drake(css_id, LC_OutDir, vartools_command, vartools_command_whit
         plt_ax.axhline(fmagmn-3*ferrmn, color='g', ls='-.', lw=2 ,alpha=0.5)
         plt_ax.axhline(fmagmn+3*fmag_stdev, color='b', ls=':', lw=2,alpha=0.5, label='3X Mag StDev')
         plt_ax.axhline(fmagmn-3*fmag_stdev, color='b', ls=':', lw=2,alpha=0.5)
-        title_line1 = 'CSS ID: {!s} | P={!s} \n logProb={!s} | Amp={!s}  \n ngood={!s} | nreject={!s} \n nabove={!s} ({!s}%) | nbelow={!s} ({!s}%) \n'.format(lc_id, str(Per_ls)+"w"*times_is_alias, logProb_ls, Amp_ls, nfmag, rejects, nabove, np.int(np.round((nabove/nmag)*100,2)), nbelow, np.int(np.round((nbelow/nmag)*100,2)))
+        title_line1 = 'CSS ID: {!s} | P={!s} | logProb={!s} \n Amp={!s} | ngood={!s} | nreject={!s}| Con={!s} \n nabove={!s} ({!s}%) | nbelow={!s} ({!s}%) | VarStat={!s} \n m={!s} | b={!s} | $\chi^2$={!s} \n a={!s} | b={!s} | c={!s} | $\chi^2$={!s}'.format(lc_id, str(Per_ls)+"w"*times_is_alias, logProb_ls, Amp_ls, nfmag, rejects, np.round(con,3), nabove, np.int(np.round((nabove/nmag)*100,2)), nbelow, np.int(np.round((nbelow/nmag)*100,2)), np.round(var_stat,2), np.round(p_lin[0],4), np.round(p_lin[1],4), np.round(residuals_lin[0],2), np.round(p_quad[0],4), np.round(p_quad[1],4), np.round(p_quad[2],4),np.round(residuals_quad[0],2))
         title_line2 = 'Drake: P={!s} | Amp={!s} | VarType={!s}'.format(D_Per, D_Amp, D_Vartype)
         title_str = title_line1 +" \n "+ title_line2
         plt_ax.set_title(title_str, fontsize=12)
@@ -350,7 +362,7 @@ def plot_CSS_LC_Drake(css_id, LC_OutDir, vartools_command, vartools_command_whit
         plt_ax.axhline(fmagmn-3*fmag_stdev, color='b', ls=':', lw=2,alpha=0.5)
         # set plot labels
         #title_str = f'{lc_id} \n mean mag. = {fmagmn:0.2f}'
-        title_line1 = 'CSS ID: {!s} | P={!s} \n logProb={!s} | Amp={!s}  \n ngood={!s} | nreject={!s} \n nabove={!s} ({!s}%) | nbelow={!s} ({!s}%) \n'.format(lc_id, str(Per_ls)+"w"*times_is_alias, logProb_ls, Amp_ls, nfmag, rejects, nabove, np.int(np.round((nabove/nmag)*100,2)), nbelow, np.int(np.round((nbelow/nmag)*100,2)))
+        title_line1 = 'CSS ID: {!s} | P={!s} | logProb={!s} \n Amp={!s} | ngood={!s} | nreject={!s}| Con={!s} \n nabove={!s} ({!s}%) | nbelow={!s} ({!s}%) | VarStat={!s} \n m={!s} | b={!s} | $\chi^2$={!s} \n a={!s} | b={!s} | c={!s} | $\chi^2$={!s}'.format(lc_id, str(Per_ls)+"w"*times_is_alias, logProb_ls, Amp_ls, nfmag, rejects, np.round(con,3), nabove, np.int(np.round((nabove/nmag)*100,2)), nbelow, np.int(np.round((nbelow/nmag)*100,2)), np.round(var_stat,2), np.round(p_lin[0],4), np.round(p_lin[1],4), np.round(residuals_lin[0],2), np.round(p_quad[0],4), np.round(p_quad[1],4), np.round(p_quad[2],4),np.round(residuals_quad[0],2))
         title_line2 = 'Drake: P={!s} | Amp={!s} | VarType={!s} '.format(D_Per, D_Amp, D_Vartype)
         #title_line2 = 'Drake: P={!s} | Amp={!s} | VarType={!s} | Subclass={!s}'.format(D_Per, D_Amp, D_Vartype, D_sub)
         plt_ax.set_title(title_line1+" \n "+title_line2, fontsize=12)
@@ -360,10 +372,10 @@ def plot_CSS_LC_Drake(css_id, LC_OutDir, vartools_command, vartools_command_whit
         plt_ax.invert_yaxis() # flip the y-axis so fainter mags are on bottom
 
     prop_header = "lc_id, Per_ls, logProb_ls, Amp_ls, Mt, a95, lc_skew, Chi2, brtcutoff, brt10per,\
-                   fnt10per, fntcutoff, errmn, ferrmn, ngood, nrejects, nabove, nbelow, isAlias, Eqw"
+                   fnt10per, fntcutoff, errmn, ferrmn, ngood, nrejects, nabove, nbelow, isAlias, VarStat, Con, m, b_lin, chi2_lin, a, b_quad, c, chi2_quad, Eqw"
     if runVartools:
         properties = np.array([lc_id, Per_ls, logProb_ls, Amp_ls, Mt, a95, lc_skew, Chi2, 
-                               brtcutoff, brt10per, fnt10per, fntcutoff, errmn, ferrmn, nfmag, rejects, nabove, nbelow, times_is_alias])
+                               brtcutoff, brt10per, fnt10per, fntcutoff, errmn, ferrmn, nfmag, rejects, nabove, nbelow, times_is_alias, var_stat, con, p_lin[0], p_lin[1], residuals_lin, p_quad[0], p_quad[1], p_quad[2], residuals_quad])
     else:
         dataFrameIndex = np.where(latestFullVartoolsRun.lc_id == lc_id)[0][0]
         #properties = latestFullVartoolsRun.values[dataFrameIndex, 2:]
@@ -837,8 +849,8 @@ def plot_middle(css_id, latestFullVartoolsRun, xi, yi, zi, plt_ax):
         cbar1.ax.get_yaxis().labelpad = 0
         cbar1.ax.set_ylabel('Skewness', rotation=270)
         #cbar1.set_clim(-1.0, 1.0)
-        single_point_color = cbar1.to_rgba(all_skewness[this_object_index])#np.array(cbar1.to_rgba(all_skewness[this_object_index], bytes=True)).reshape((1,4))
-        plt_ax.scatter(np.log10(all_Per_ls[this_object_index]), np.log10(all_Amp_ls[this_object_index]), s=150.0, marker="X", color=single_point_color, edgecolors='red')
+        single_point_color = cbar1.mappable.to_rgba(all_skewness[this_object_index])#np.array(cbar1.to_rgba(all_skewness[this_object_index], bytes=True)).reshape((1,4))
+        plt_ax.scatter(np.log10(all_Per_ls[this_object_index]), np.log10(all_Amp_ls[this_object_index]), s=200.0, marker="X", color=single_point_color, edgecolors='red')
         plt_ax.set_xlabel("log(P / d)")
         plt_ax.set_ylabel("log(A / mag)")
         plt_ax.set_xlim([-1.0, 0.5])
@@ -852,7 +864,7 @@ def plot_middle(css_id, latestFullVartoolsRun, xi, yi, zi, plt_ax):
         plt_ax.set_ylabel("a95")
         plt_ax.set_xlim([-0.5, 2.5])
         plt_ax.set_ylim([0.0, 3.0])
-        plt_ax.scatter(np.log10(all_ChiSq[this_object_index]), all_a95[this_object_index], s=20.0, marker="X", color='red')
+        plt_ax.scatter(np.log10(all_ChiSq[this_object_index]), all_a95[this_object_index], s=100.0, marker="X", color='red')
         title_str = "log10($\chi^2$) = "+str(np.round(np.log10(all_ChiSq[this_object_index]),2))+"\n a95 = "+str(np.round(all_a95[this_object_index],2))
         plt_ax.set_title(title_str, fontsize=12)
 
@@ -1071,3 +1083,23 @@ class latestFullVartoolsRun:
         self.xi_2, self.yi_2 = np.mgrid[-0.5:2.5:self.nbins*1j, 0.0:3.0:self.nbins*1j]
         self.zi_2 = self.k2(np.vstack([self.xi_2.flatten(), self.yi_2.flatten()]))
         self.zi_2 = np.sqrt(self.zi_2)
+
+def consecutive(data, stepsize=1):
+    arrays = np.split(data, np.where(np.diff(data) != stepsize)[0]+1)
+    list = [array.tolist() for array in arrays]
+    return list
+
+def conStat(mag, consec_size=3, stepsize=1):
+    departures = []
+    med_p = np.nanmedian(mag) + 2.0*np.nanstd(mag)
+    med_m = np.nanmedian(mag) - 2.0*np.nanstd(mag)
+    data = np.where((mag < med_m) | (mag > med_p))[0]
+    canidiates = consecutive(data, stepsize=stepsize)
+    for ii in range(len(canidiates)):
+        current_canidiates = canidiates[ii]
+        if len(current_canidiates) >= consec_size:
+            departures.append(current_canidiates)
+
+    con = len([ele for sub in departures for ele in sub]) / (mag.size - 2)
+
+    return con 
