@@ -1,2 +1,8 @@
 __pycache__/
 .DS_Store
+lib_varindex_cscott.py
+sup_data/PyHammerResults.csv
+sup_data/RejectSpectra.csv
+sup_data/spectralIndices.csv
+sup_data/PyHammerResults.csv
+sup_data/PyHammerResults.csv
