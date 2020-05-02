@@ -1,3 +1,5 @@
 __pycache__/
 .DS_Store
 lib_varindex_cscott.py
+.ipynb_checkpoints/
+old/
