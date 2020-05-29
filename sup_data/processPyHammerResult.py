@@ -14,7 +14,7 @@ all_plates =TDSSprop.data['plate']
 all_mjds = TDSSprop.data['mjd']
 all_fiberids = TDSSprop.data['fiber']
 
-pyhammer_result_filename = "PyHammerResults_VarStar_04-08-2020"
+pyhammer_result_filename = "PyHammerResults_VarStar_05-03-2020"
 
 pyhammer_file = np.genfromtxt("sup_data/"+pyhammer_result_filename+".csv", dtype="U", comments="#", delimiter=",")
 pyhammer_plate_mjd_fiberid = np_f.split(np_f.replace(np_f.replace(np_f.replace(pyhammer_file[:,0], "/Users/benjaminroulston/Dropbox/Research/TDSS/Variable_Stars/HARD_COPY_ORGINAL_DATA/SDSS_spec/02-26-2020/SDSSspec/spec-", ""), "-", " "), ".fits", ""))
@@ -65,8 +65,20 @@ pyhammer_table = hstack([pyhammer_table, specInd[specInd.columns.keys()[1:-1]]])
 #********************************************************************************
 #********************************************************************************
 
-specInd = Table.read('sup_data/spectralIndices_VarStar_04-08-2020.csv', format='csv')
-pyhammer_plate_mjd_fiberid = np_f.split(np_f.replace(np_f.replace(np_f.replace(specInd['#Filename'].data, "spec-", ""), "-", " "), ".fits", ""))
+specInd = Table.read('sup_data/spectralIndices_VarStar_05-03-2020.csv', format='csv')
+
+path_to_be_remvoed = "/Users/benjaminroulston/Dropbox/Research/TDSS/Variable_Stars/HARD_COPY_ORGINAL_DATA/SDSS_spec/02-26-2020/SDSSspec/"
+pyhammer_plate_mjd_fiberid = np_f.split(
+                                        np_f.replace(
+                                                     np_f.replace(
+                                                                  np_f.replace(
+                                                                               np_f.replace(
+                                                                                            specInd['#Filename'].data,
+                                                                                            path_to_be_remvoed, ""),
+                                                                               "spec-", ""),
+                                                                  "-", " "),
+                                                     ".fits", "")
+                                        )
 
 pyhammer_ra = []
 pyhammer_dec = []
@@ -76,16 +88,20 @@ pyhammer_mjds = []
 pyhammer_fiberids = []
 
 for ii in range(pyhammer_plate_mjd_fiberid.shape[0]):
+    try:
+        match_index = np.where((all_plates   == int(pyhammer_plate_mjd_fiberid[ii][0]))
+                             & (all_mjds     == int(pyhammer_plate_mjd_fiberid[ii][1]))
+                             & (all_fiberids == int(pyhammer_plate_mjd_fiberid[ii][2]))
+                             )[0][0]
+        pyhammer_ra.append(all_ra[match_index])
+        pyhammer_dec.append(all_dec[match_index])
+    except:
+        pyhammer_ra.append(np.nan)
+        pyhammer_dec.append(np.nan)
+
     pyhammer_plates.append(pyhammer_plate_mjd_fiberid[ii][0])
     pyhammer_mjds.append(pyhammer_plate_mjd_fiberid[ii][1])
     pyhammer_fiberids.append(pyhammer_plate_mjd_fiberid[ii][2])
-
-    match_index = np.where((all_plates     == int(pyhammer_plate_mjd_fiberid[ii][0]))
-                           & (all_mjds     == int(pyhammer_plate_mjd_fiberid[ii][1]))
-                           & (all_fiberids == int(pyhammer_plate_mjd_fiberid[ii][2]))
-                           )[0][0]
-    pyhammer_ra.append(all_ra[match_index])
-    pyhammer_dec.append(all_dec[match_index])
 
 pyhammer_ra = np.array(pyhammer_ra)
 pyhammer_dec = np.array(pyhammer_dec)
