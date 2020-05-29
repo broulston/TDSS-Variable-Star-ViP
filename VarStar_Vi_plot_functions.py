@@ -24,11 +24,14 @@ from astropy.io import fits
 from astropy import coordinates as coords
 from astropy.timeseries import LombScargle
 
-import mimic_alpha as ma
-
-import LCtools
+import ResearchTools.LCtools as LCtools
 
 np.seterr(divide='ignore', invalid='ignore')
+
+
+def low_order_poly(mag, a, b, c, d, e, f_, g):
+    return a + b * mag + c * mag**2 + d * mag**3 + e * mag**4 + f_ * mag**5 + g * mag**5
+
 
 def LC_analysis(ROW, TDSSprop, CSS_LC_dir, ZTF_g_LCs, ZTF_r_LCs, ax, CSS_LC_plot_dir, ZTF_LC_plot_dir, Nepochs_required, checkalias=False, plt_subLC=False):
     is_CSS = ROW['CSSLC']
@@ -43,6 +46,13 @@ def LC_analysis(ROW, TDSSprop, CSS_LC_dir, ZTF_g_LCs, ZTF_r_LCs, ax, CSS_LC_plot
             lc_file = CSS_LC_dir+str(ROW['CSSID'])+'.dat'
             CSS_lc_data = Table.read(lc_file, format='ascii', names=['mjd', 'mag', 'magerr'])
             if len(CSS_lc_data)>=Nepochs_required:
+                popt = np.array([-2.61242938e+01,  1.93636204e+00,  4.45971381e-01, -6.49419310e-02, 2.99231126e-03,  2.40758201e-01, -2.40805035e-01])
+                magerr_resid_mean = 0.008825118765717422
+                shift_const = 1.5 * magerr_resid_mean
+                pred_magerr = low_order_poly(CSS_lc_data['mag'], popt[0], popt[1], popt[2], popt[3], popt[4], popt[5], popt[6])
+                bad_err_index = np.where(CSS_lc_data['magerr'] - (pred_magerr - shift_const) < 0.0)[0]
+                CSS_lc_data['magerr'][bad_err_index] = pred_magerr[bad_err_index]
+
                 CSS_flc_data, LC_stat_properties = LCtools.process_LC(CSS_lc_data, fltRange=5.0)
                 LC_period_properties, all_CSS_period_properties = LCtools.perdiodSearch(CSS_flc_data, minP=0.1, maxP=100.0, checkalias=checkalias)
                 all_CSS_period_properties = {**LC_stat_properties, **all_CSS_period_properties}
@@ -53,9 +63,9 @@ def LC_analysis(ROW, TDSSprop, CSS_LC_dir, ZTF_g_LCs, ZTF_r_LCs, ax, CSS_LC_plot
 
                 if plt_subLC:
                     fig = plt.figure()
-                    title = "RA: {!s} DEC: {!s} | P = {!s}d | {!s}w \n log10(FAP) = {!s} | {!s} mag = {!s} | Amp = {!s} | t0 = {!s}".format(ra_string, dec_string, np.round(LC_period_properties['P'], 5), LC_period_properties['time_whittened'], np.round(LC_period_properties['logProb'], 2), "CSS", np.round(ROW['CSSmag'],2), np.round(LC_period_properties['Amp'],3), np.round(all_CSS_period_properties['t0'],5))   
+                    title = "RA: {!s} DEC: {!s} $|$ P = {!s}d $|$ {!s}w \n log10(FAP) = {!s} $|$ {!s} mag = {!s} $|$ Amp = {!s} $|$ t0 = {!s}".format(ra_string, dec_string, np.round(LC_period_properties['P'], 5), LC_period_properties['time_whittened'], np.round(LC_period_properties['logProb'], 2), "CSS", np.round(ROW['CSSmag'],2), np.round(LC_period_properties['Amp'],3), np.round(all_CSS_period_properties['t0'],5))   
                     LCtools.plt_lc(CSS_flc_data, all_CSS_period_properties['AFD'], fig=fig, title=title, is_Periodic=all_CSS_period_properties['is_Periodic'], plt_resid=True, phasebin=True, bins=25)
-                    plt.savefig(CSS_LC_plot_dir+ra_string+dec_string+"_CSS.png", dpi=600)
+                    plt.savefig(CSS_LC_plot_dir+ra_string+dec_string+"_CSS.pdf", dpi=600)
                     plt.clf()
                     plt.close()
             else:
@@ -81,9 +91,9 @@ def LC_analysis(ROW, TDSSprop, CSS_LC_dir, ZTF_g_LCs, ZTF_r_LCs, ax, CSS_LC_plot
 
             if plt_subLC:
                 fig = plt.figure()
-                title = "RA: {!s} DEC: {!s} | P = {!s}d | {!s}w \n log10(FAP) = {!s} | {!s} mag = {!s} | Amp = {!s} | t0 = {!s}".format(ra_string, dec_string, np.round(LC_period_properties['P'], 5), LC_period_properties['time_whittened'], np.round(LC_period_properties['logProb'], 2), "ZTF g", np.round(ROW['ZTF_g_mag'],2), np.round(LC_period_properties['Amp'],3), np.round(all_ZTFg_period_properties['t0'],5))   
+                title = "RA: {!s} DEC: {!s} $|$ P = {!s}d $|$ {!s}w \n log10(FAP) = {!s} $|$ {!s} mag = {!s} $|$ Amp = {!s} $|$ t0 = {!s}".format(ra_string, dec_string, np.round(LC_period_properties['P'], 5), LC_period_properties['time_whittened'], np.round(LC_period_properties['logProb'], 2), "ZTF g", np.round(ROW['ZTF_g_mag'],2), np.round(LC_period_properties['Amp'],3), np.round(all_ZTFg_period_properties['t0'],5))   
                 LCtools.plt_lc(ZTF_gflc_data, all_ZTFg_period_properties['AFD'], fig=fig, title=title, is_Periodic=all_ZTFg_period_properties['is_Periodic'], plt_resid=True, phasebin=True, bins=25)
-                plt.savefig(ZTF_LC_plot_dir+"g/"+ra_string+dec_string+"_ZTFg.png", dpi=600)
+                plt.savefig(ZTF_LC_plot_dir+"g/"+ra_string+dec_string+"_ZTFg.pdf", dpi=600)
                 plt.clf()
                 plt.close()
         else:
@@ -106,9 +116,9 @@ def LC_analysis(ROW, TDSSprop, CSS_LC_dir, ZTF_g_LCs, ZTF_r_LCs, ax, CSS_LC_plot
 
             if plt_subLC:
                 fig = plt.figure()
-                title = "RA: {!s} DEC: {!s} | P = {!s}d | {!s}w \n log10(FAP) = {!s} | {!s} mag = {!s} | Amp = {!s} | t0 = {!s}".format(ra_string, dec_string, np.round(LC_period_properties['P'], 5), LC_period_properties['time_whittened'], np.round(LC_period_properties['logProb'], 2), "ZTF r", np.round(ROW['ZTF_r_mag'],2), np.round(LC_period_properties['Amp'],3), np.round(all_ZTFr_period_properties['t0'],5))   
+                title = "RA: {!s} DEC: {!s} $|$ P = {!s}d $|$ {!s}w \n log10(FAP) = {!s} $|$ {!s} mag = {!s} $|$ Amp = {!s} $|$ t0 = {!s}".format(ra_string, dec_string, np.round(LC_period_properties['P'], 5), LC_period_properties['time_whittened'], np.round(LC_period_properties['logProb'], 2), "ZTF r", np.round(ROW['ZTF_r_mag'],2), np.round(LC_period_properties['Amp'],3), np.round(all_ZTFr_period_properties['t0'],5))   
                 LCtools.plt_lc(ZTF_rflc_data, all_ZTFr_period_properties['AFD'], fig=fig, title=title, is_Periodic=all_ZTFr_period_properties['is_Periodic'], plt_resid=True, phasebin=True, bins=25)
-                plt.savefig(ZTF_LC_plot_dir+"r/"+ra_string+dec_string+"_ZTFr.png", dpi=600)
+                plt.savefig(ZTF_LC_plot_dir+"r/"+ra_string+dec_string+"_ZTFr.pdf", dpi=600)
                 plt.clf()
                 plt.close()
         else:
@@ -121,20 +131,20 @@ def LC_analysis(ROW, TDSSprop, CSS_LC_dir, ZTF_g_LCs, ZTF_r_LCs, ax, CSS_LC_plot
     best_LC = find_best_LC(all_CSS_period_properties, all_ZTFg_period_properties, all_ZTFr_period_properties)
 
     if ROW['isDrake']:
-        title_line2 = '\n Drake: P={!s} | Amp={!s} | VarType={!s}'.format(ROW['Drake_Per'], ROW['Drake_Vamp'], TDSSprop.Drake_num_to_vartype[(ROW['Drake_Cl']-1).astype(int), 1].strip())
+        title_line2 = "\n Drake: P={!s} $|$ Amp={!s} $|$ VarType={!s}".format(ROW['Drake_Per'], ROW['Drake_Vamp'], TDSSprop.Drake_num_to_vartype[(ROW['Drake_Cl']-1).astype(int)]['Var_Type'].strip())
     else:
         title_line2 = ""
 
     if best_LC=='CSS':
-        title_line1 = 'CSS ID: {!s} | P={!s} | logProb={!s} \n Amp={!s} | ngood={!s} | nreject={!s}| Con={!s} \n nabove={!s} ({!s}%) | nbelow={!s} ({!s}%) | VarStat={!s} \n Tspan100={!s} | Tspan95={!s}\n m={!s} | b={!s} | $\chi^2$={!s} \n a={!s} | b={!s} | c={!s} | $\chi^2$={!s}'.format(ROW['CSSID'], str(np.round(all_CSS_period_properties['P'],5))+"w"+str(all_CSS_period_properties['time_whittened']), np.round(all_CSS_period_properties['logProb'],3), np.round(all_CSS_period_properties['Amp'],2), all_CSS_period_properties['ngood'], all_CSS_period_properties['nrejects'], np.round(all_CSS_period_properties['Con'],3), all_CSS_period_properties['nabove'], np.int(np.round((all_CSS_period_properties['nabove']/all_CSS_period_properties['ngood'])*100,2)), all_CSS_period_properties['nbelow'], np.int(np.round((all_CSS_period_properties['nbelow']/all_CSS_period_properties['ngood'])*100,2)), np.round(all_CSS_period_properties['VarStat'],2), np.round(all_CSS_period_properties['Tspan100'],2), np.round(all_CSS_period_properties['Tspan95'],2), np.round(all_CSS_period_properties['m'],4), np.round(all_CSS_period_properties['b_lin'],4), np.round(all_CSS_period_properties['chi2_lin'],2), np.round(all_CSS_period_properties['a'],4), np.round(all_CSS_period_properties['b_quad'],4), np.round(all_CSS_period_properties['c'],4),np.round(all_CSS_period_properties['chi2_quad'],2))
+        title_line1 = "CSS ID: {!s} $|$ P={!s} $|$ logProb={!s} \n Amp={!s} $|$ ngood={!s} $|$ nreject={!s} $|$ Con={!s} \n nabove={!s} ({!s}\%) $|$ nbelow={!s} ({!s}\%) $|$ VarStat={!s} \n Tspan100={!s} $|$ Tspan95={!s}\n m={!s} $|$ b={!s} $|$ $\chi^2$={!s} \n a={!s} $|$ b={!s} $|$ c={!s} $|$ $\chi^2$={!s}".format(ROW['CSSID'], str(np.round(all_CSS_period_properties['P'],5))+"w"+str(all_CSS_period_properties['time_whittened']), np.round(all_CSS_period_properties['logProb'],3), np.round(all_CSS_period_properties['Amp'],2), all_CSS_period_properties['ngood'], all_CSS_period_properties['nrejects'], np.round(all_CSS_period_properties['Con'],3), all_CSS_period_properties['nabove'], np.int(np.round((all_CSS_period_properties['nabove']/all_CSS_period_properties['ngood'])*100,2)), all_CSS_period_properties['nbelow'], np.int(np.round((all_CSS_period_properties['nbelow']/all_CSS_period_properties['ngood'])*100,2)), np.round(all_CSS_period_properties['VarStat'],2), np.round(all_CSS_period_properties['Tspan100'],2), np.round(all_CSS_period_properties['Tspan95'],2), np.round(all_CSS_period_properties['m'],4), np.round(all_CSS_period_properties['b_lin'],4), np.round(all_CSS_period_properties['chi2_lin'],2), np.round(all_CSS_period_properties['a'],4), np.round(all_CSS_period_properties['b_quad'],4), np.round(all_CSS_period_properties['c'],4),np.round(all_CSS_period_properties['chi2_quad'],2))
         title_str = title_line1+title_line2
         plt_lc(CSS_flc_data, all_CSS_period_properties['AFD'], title=title_str, is_Periodic=all_CSS_period_properties['is_Periodic'], ax=ax)
     elif best_LC=='ZTF_g':
-        title_line1 = 'ZTF g GroupID: {!s} | P={!s} | logProb={!s} \n Amp={!s} | ngood={!s} | nreject={!s}| Con={!s} \n nabove={!s} ({!s}%) | nbelow={!s} ({!s}%) | VarStat={!s} \n Tspan100={!s} | Tspan95={!s}\n m={!s} | b={!s} | $\chi^2$={!s} \n a={!s} | b={!s} | c={!s} | $\chi^2$={!s}'.format(ROW['ZTF_g_GroupID'], str(np.round(all_ZTFg_period_properties['P'],5))+"w"+str(all_ZTFg_period_properties['time_whittened']), np.round(all_ZTFg_period_properties['logProb'],3), np.round(all_ZTFg_period_properties['Amp'],2), all_ZTFg_period_properties['ngood'], all_ZTFg_period_properties['nrejects'], np.round(all_ZTFg_period_properties['Con'],3), all_ZTFg_period_properties['nabove'], np.int(np.round((all_ZTFg_period_properties['nabove']/all_ZTFg_period_properties['ngood'])*100,2)), all_ZTFg_period_properties['nbelow'], np.int(np.round((all_ZTFg_period_properties['nbelow']/all_ZTFg_period_properties['ngood'])*100,2)), np.round(all_ZTFg_period_properties['VarStat'],2), np.round(all_ZTFg_period_properties['Tspan100'],2), np.round(all_ZTFg_period_properties['Tspan95'],2), np.round(all_ZTFg_period_properties['m'],4), np.round(all_ZTFg_period_properties['b_lin'],4), np.round(all_ZTFg_period_properties['chi2_lin'],2), np.round(all_ZTFg_period_properties['a'],4), np.round(all_ZTFg_period_properties['b_quad'],4), np.round(all_ZTFg_period_properties['c'],4),np.round(all_ZTFg_period_properties['chi2_quad'],2))
+        title_line1 = "ZTF g GroupID: {!s} $|$ P={!s} $|$ logProb={!s} \n Amp={!s} $|$ ngood={!s} $|$ nreject={!s} $|$ Con={!s} \n nabove={!s} ({!s}\%) $|$ nbelow={!s} ({!s}\%) $|$ VarStat={!s} \n Tspan100={!s} $|$ Tspan95={!s}\n m={!s} $|$ b={!s} $|$ $\chi^2$={!s} \n a={!s} $|$ b={!s} $|$ c={!s} $|$ $\chi^2$={!s}".format(ROW['ZTF_g_GroupID'], str(np.round(all_ZTFg_period_properties['P'],5))+"w"+str(all_ZTFg_period_properties['time_whittened']), np.round(all_ZTFg_period_properties['logProb'],3), np.round(all_ZTFg_period_properties['Amp'],2), all_ZTFg_period_properties['ngood'], all_ZTFg_period_properties['nrejects'], np.round(all_ZTFg_period_properties['Con'],3), all_ZTFg_period_properties['nabove'], np.int(np.round((all_ZTFg_period_properties['nabove']/all_ZTFg_period_properties['ngood'])*100,2)), all_ZTFg_period_properties['nbelow'], np.int(np.round((all_ZTFg_period_properties['nbelow']/all_ZTFg_period_properties['ngood'])*100,2)), np.round(all_ZTFg_period_properties['VarStat'],2), np.round(all_ZTFg_period_properties['Tspan100'],2), np.round(all_ZTFg_period_properties['Tspan95'],2), np.round(all_ZTFg_period_properties['m'],4), np.round(all_ZTFg_period_properties['b_lin'],4), np.round(all_ZTFg_period_properties['chi2_lin'],2), np.round(all_ZTFg_period_properties['a'],4), np.round(all_ZTFg_period_properties['b_quad'],4), np.round(all_ZTFg_period_properties['c'],4),np.round(all_ZTFg_period_properties['chi2_quad'],2))
         title_str = title_line1+title_line2
         plt_lc(ZTF_gflc_data, all_ZTFg_period_properties['AFD'], title=title_str, is_Periodic=all_ZTFg_period_properties['is_Periodic'], ax=ax)
     elif best_LC=='ZTF_r':
-        title_line1 = 'ZTF r GroupID: {!s} | P={!s} | logProb={!s} \n Amp={!s} | ngood={!s} | nreject={!s}| Con={!s} \n nabove={!s} ({!s}%) | nbelow={!s} ({!s}%) | VarStat={!s} \n Tspan100={!s} | Tspan95={!s}\n m={!s} | b={!s} | $\chi^2$={!s} \n a={!s} | b={!s} | c={!s} | $\chi^2$={!s}'.format(ROW['ZTF_r_GroupID'], str(np.round(all_ZTFr_period_properties['P'],5))+"w"+str(all_ZTFr_period_properties['time_whittened']), np.round(all_ZTFr_period_properties['logProb'],3), np.round(all_ZTFr_period_properties['Amp'],2), all_ZTFr_period_properties['ngood'], all_ZTFr_period_properties['nrejects'], np.round(all_ZTFr_period_properties['Con'],3), all_ZTFr_period_properties['nabove'], np.int(np.round((all_ZTFr_period_properties['nabove']/all_ZTFr_period_properties['ngood'])*100,2)), all_ZTFr_period_properties['nbelow'], np.int(np.round((all_ZTFr_period_properties['nbelow']/all_ZTFr_period_properties['ngood'])*100,2)), np.round(all_ZTFr_period_properties['VarStat'],2), np.round(all_ZTFr_period_properties['Tspan100'],2), np.round(all_ZTFr_period_properties['Tspan95'],2), np.round(all_ZTFr_period_properties['m'],4), np.round(all_ZTFr_period_properties['b_lin'],4), np.round(all_ZTFr_period_properties['chi2_lin'],2), np.round(all_ZTFr_period_properties['a'],4), np.round(all_ZTFr_period_properties['b_quad'],4), np.round(all_ZTFr_period_properties['c'],4),np.round(all_ZTFr_period_properties['chi2_quad'],2))
+        title_line1 = "ZTF r GroupID: {!s} $|$ P={!s} $|$ logProb={!s} \n Amp={!s} $|$ ngood={!s} $|$ nreject={!s} $|$ Con={!s} \n nabove={!s} ({!s}\%) $|$ nbelow={!s} ({!s}\%) $|$ VarStat={!s} \n Tspan100={!s} $|$ Tspan95={!s}\n m={!s} $|$ b={!s} $|$ $\chi^2$={!s} \n a={!s} $|$ b={!s} $|$ c={!s} $|$ $\chi^2$={!s}".format(ROW['ZTF_r_GroupID'], str(np.round(all_ZTFr_period_properties['P'],5))+"w"+str(all_ZTFr_period_properties['time_whittened']), np.round(all_ZTFr_period_properties['logProb'],3), np.round(all_ZTFr_period_properties['Amp'],2), all_ZTFr_period_properties['ngood'], all_ZTFr_period_properties['nrejects'], np.round(all_ZTFr_period_properties['Con'],3), all_ZTFr_period_properties['nabove'], np.int(np.round((all_ZTFr_period_properties['nabove']/all_ZTFr_period_properties['ngood'])*100,2)), all_ZTFr_period_properties['nbelow'], np.int(np.round((all_ZTFr_period_properties['nbelow']/all_ZTFr_period_properties['ngood'])*100,2)), np.round(all_ZTFr_period_properties['VarStat'],2), np.round(all_ZTFr_period_properties['Tspan100'],2), np.round(all_ZTFr_period_properties['Tspan95'],2), np.round(all_ZTFr_period_properties['m'],4), np.round(all_ZTFr_period_properties['b_lin'],4), np.round(all_ZTFr_period_properties['chi2_lin'],2), np.round(all_ZTFr_period_properties['a'],4), np.round(all_ZTFr_period_properties['b_quad'],4), np.round(all_ZTFr_period_properties['c'],4),np.round(all_ZTFr_period_properties['chi2_quad'],2))
         title_str = title_line1+title_line2
         plt_lc(ZTF_rflc_data, all_ZTFr_period_properties['AFD'], title=title_str, is_Periodic=all_ZTFr_period_properties['is_Periodic'], ax=ax)
     else:
@@ -213,7 +223,7 @@ def find_best_LC(all_CSS_period_properties, all_ZTFg_period_properties, all_ZTFr
             return base_LCs[np.argmax(ChiSqs)]
 
 
-def plt_lc(lc_data, AFD_data, ax, title="test", is_Periodic=False, plt_resid=False, phasebin=False, bins=25, RV=False):
+def plt_lc(lc_data, AFD_data, ax, title="", is_Periodic=False, plt_resid=False, phasebin=False, bins=25, RV=False):
     if isinstance(lc_data, Table):
         mjd = lc_data['mjd'].data
         mag = lc_data['mag'].data
@@ -264,7 +274,7 @@ def plt_lc(lc_data, AFD_data, ax, title="test", is_Periodic=False, plt_resid=Fal
         #ax.set_xlim(0.0, 2.0)
         #ax.set_ylim(18.2, 16.7)
         if RV:
-            ax.set_ylabel('RV [km/s]')
+            ax.set_ylabel('RV [km s$^{-1}$]')
         else:
             ax.set_ylabel('mag')
             #ax.set_xlabel('Phase')
@@ -317,13 +327,13 @@ def plt_lc(lc_data, AFD_data, ax, title="test", is_Periodic=False, plt_resid=Fal
         ax.set_xlabel('MJD')
         ax.grid()
         if RV:
-            ax.set_ylabel('RV [km/s]')
+            ax.set_ylabel('RV [km s$^{-1}$]')
         else:
             ax.set_ylabel('mag')
             ax.invert_yaxis()
 
 
-def plot_SDSSspec(ROW, TDSSprop, prop_id, spec_dir, plt_ax):  
+def plot_SDSSspec(ROW, TDSSprop, prop_id, spec_dir, plt_ax): 
     line_list_dir = "/Users/benjaminroulston/Dropbox/Research/TDSS/General/SpecLineLists/"
     spectral_type_prop_dir = "/Users/benjaminroulston/Dropbox/Research/TDSS/General/SpecTypeProp/"
 
@@ -447,32 +457,32 @@ def plot_SDSSspec(ROW, TDSSprop, prop_id, spec_dir, plt_ax):
         subclass = file_data[2].data['SUBCLASS_NOQSO'][0]
     if np.isnan(this_EqW):
         EqW_string = ""
-        plot_title = str("RA: "+ra_string+", DEC: "+dec_string+" | cz = "+str(cz)+"$\pm$"+str(cz_err)+" km s$^{-1}$ | SDSS Subclass = "
+        plot_title = str("RA: "+ra_string+", DEC: "+dec_string+" $|$ cz = "+str(cz)+"$\pm$"+str(cz_err)+" km s$^{-1}$ $|$ SDSS Subclass = "
                     +str(subclass)+"\n PyHammer = "+specTypeMatch+EqW_string+", RV = "+pyhammer_RV+" km s$^{-1}$"+"\n "
-                    +"prop. | Plate = "+plate_string+" MJD = "+mjd_string+" Fiberid = "+fiberid_string+" | GaiaDR2 Dist = "+str(np.int(np.round(ROW['rest_GAIADR2'],2)))
-                    +" pc (SNR = "+str(np.round(ROW['parallax_GAIADR2']/ROW['parallax_error_GAIADR2'],2))+") | GaiaDR2 PMtot = "+str(np.round(TDSSprop.gaia_pmTOT[prop_id],2))
+                    +"prop. $|$ Plate = "+plate_string+" MJD = "+mjd_string+" Fiberid = "+fiberid_string+" $|$ GaiaDR2 Dist = "+str(np.int(np.round(ROW['rest_GAIADR2'],2)))
+                    +" pc (SNR = "+str(np.round(ROW['parallax_GAIADR2']/ROW['parallax_error_GAIADR2'],2))+") $|$ GaiaDR2 PMtot = "+str(np.round(TDSSprop.gaia_pmTOT[prop_id],2))
                     +" mas/yr (SNR = "+str(np.round(TDSSprop.gaia_pmTOT[prop_id]/TDSSprop.gaia_pmTOT_error[prop_id], 2))+")")
     elif this_EqW > -2.0:
         EqW_string = ""
-        plot_title = str("RA: "+ra_string+", DEC: "+dec_string+" | cz = "+str(cz)+"$\pm$"+str(cz_err)+" km s$^{-1}$ | SDSS Subclass = "
+        plot_title = str("RA: "+ra_string+", DEC: "+dec_string+" $|$ cz = "+str(cz)+"$\pm$"+str(cz_err)+" km s$^{-1}$ $|$ SDSS Subclass = "
                     +str(subclass)+"\n PyHammer = "+specTypeMatch+EqW_string+", RV = "+pyhammer_RV+" km s$^{-1}$"+"\n "
-                    +"prop. | Plate = "+plate_string+" MJD = "+mjd_string+" Fiberid = "+fiberid_string+" | GaiaDR2 Dist = "+str(np.int(np.round(ROW['rest_GAIADR2'],2)))
-                    +" pc (SNR = "+str(np.round(ROW['parallax_GAIADR2']/ROW['parallax_error_GAIADR2'],2))+") | GaiaDR2 PMtot = "+str(np.round(TDSSprop.gaia_pmTOT[prop_id],2))
+                    +"prop. $|$ Plate = "+plate_string+" MJD = "+mjd_string+" Fiberid = "+fiberid_string+" $|$ GaiaDR2 Dist = "+str(np.int(np.round(ROW['rest_GAIADR2'],2)))
+                    +" pc (SNR = "+str(np.round(ROW['parallax_GAIADR2']/ROW['parallax_error_GAIADR2'],2))+") $|$ GaiaDR2 PMtot = "+str(np.round(TDSSprop.gaia_pmTOT[prop_id],2))
                     +" mas/yr (SNR = "+str(np.round(TDSSprop.gaia_pmTOT[prop_id]/TDSSprop.gaia_pmTOT_error[prop_id], 2))+")")
     else:
         EqW_string = "e"
         this_EqW_str = str(np.round(this_EqW,2))
-        plot_title = str("RA: "+ra_string+", DEC: "+dec_string+" | cz = "+str(cz)+"$\pm$"+str(cz_err)+" km s$^{-1}$ | SDSS Subclass = "
+        plot_title = str("RA: "+ra_string+", DEC: "+dec_string+" $|$ cz = "+str(cz)+"$\pm$"+str(cz_err)+" km s$^{-1}$ $|$ SDSS Subclass = "
                     +str(subclass)+"\n PyHammer = "+specTypeMatch+EqW_string+", RV = "+pyhammer_RV+" km s$^{-1}$, EQW = "+this_EqW_str+"\n "
-                    +"prop. | Plate = "+plate_string+" MJD = "+mjd_string+" Fiberid = "+fiberid_string+" | GaiaDR2 Dist = "+str(np.int(np.round(ROW['rest_GAIADR2'],2)))
-                    +" pc (SNR = "+str(np.round(ROW['parallax_GAIADR2']/ROW['parallax_error_GAIADR2'],2))+") | GaiaDR2 PMtot = "+str(np.round(TDSSprop.gaia_pmTOT[prop_id],2))
+                    +"prop. $|$ Plate = "+plate_string+" MJD = "+mjd_string+" Fiberid = "+fiberid_string+" $|$ GaiaDR2 Dist = "+str(np.int(np.round(ROW['rest_GAIADR2'],2)))
+                    +" pc (SNR = "+str(np.round(ROW['parallax_GAIADR2']/ROW['parallax_error_GAIADR2'],2))+") $|$ GaiaDR2 PMtot = "+str(np.round(TDSSprop.gaia_pmTOT[prop_id],2))
                     +" mas/yr (SNR = "+str(np.round(TDSSprop.gaia_pmTOT[prop_id]/TDSSprop.gaia_pmTOT_error[prop_id], 2))+")")
 
     plt_ax.plot(smooth_wavelength,smooth_flux,color='black',linewidth=0.5)
     #plt_ax.plot(temp_lam, temp_flux_scaled, color='red', alpha=0.3, linewidth=0.5)
     plt_ax.plot(smooth_temp_wavelength, smooth_temp_flux, color='red', alpha=0.3, linewidth=0.5)
-    plt_ax.set_xlabel(r"Wavelength [$\AA$]")#, fontdict=font)
-    plt_ax.set_ylabel(r"Flux [10$^{-17}$ erg s$^{-1}$ cm$^{-2}$ $\AA$$^{-1}$]")#, fontdict=font)
+    plt_ax.set_xlabel("Wavelength [\AA]")#, fontdict=font)
+    plt_ax.set_ylabel("Flux [10$^{-17}$ erg s$^{-1}$ cm$^{-2}$ \AA$^{-1}$]")#, fontdict=font)
     plt_ax.set_title(plot_title)
     plt_ax.set_xlim([xmin,xmax])
     plt_ax.set_ylim([ymin,ymax])
@@ -480,13 +490,14 @@ def plot_SDSSspec(ROW, TDSSprop, prop_id, spec_dir, plt_ax):
     plt_ax.xaxis.set_major_locator(ticker.MultipleLocator(major_tick_space))
     plt_ax.xaxis.set_minor_locator(ticker.MultipleLocator(minor_tick_space))
     for ll in range(lineList_wavelength.size):
-        plt_ax.axvline(x=lineList_wavelength[ll],ls='dashed',c=ma.colorAlpha_to_rgb('k', 0.1)[0])
+        plt_ax.axvline(x=lineList_wavelength[ll],ls='dashed',c='k', alpha=0.1)
         x_bounds = plt_ax.get_xlim()
         vlineLabel_value = lineList_wavelength[ll] + 20.0
        # plt_ax.annotate(s=lineList_labels[ll], xy =(((vlineLabel_value-x_bounds[0])/(x_bounds[1]-x_bounds[0])),0.01),
                          #xycoords='axes fraction', verticalalignment='right', horizontalalignment='right bottom' , rotation = 90)
-        plt_ax.text(lineList_wavelength[ll]+20.0,plt_ax.get_ylim()[0]+0.50,lineList_labels[ll],rotation=90, color=ma.colorAlpha_to_rgb('k', 0.2)[0])
+        plt_ax.text(lineList_wavelength[ll]+20.0,plt_ax.get_ylim()[0]+0.50,lineList_labels[ll],rotation=90, color='k', alpha=0.2)
     return this_EqW
+
 
 def plot_SDSS_photo(ra, dec, image_dir, plt_ax):
     ra_string = '{:0>9.5f}'.format(ra)
@@ -519,6 +530,7 @@ def plot_SDSS_photo(ra, dec, image_dir, plt_ax):
     plt_ax.set_yticks([])
     #WCSAxes(plt_ax, wcs=)
     plt_ax.scatter(impix/2.0, impix/2.0, s=fiber_marker_scale, edgecolors='white', marker="+", facecolors='none')
+
 
 def plot_CMD(TDSSprop, prop_id, plt_ax):
     xi = TDSSprop.xi
@@ -598,13 +610,14 @@ def plot_CMD(TDSSprop, prop_id, plt_ax):
 
     upperLimDist
     try:
-        title_str = "M$_i$ = {!s} \n g-i = {!s} \n UpperLim Dist = {!s} pc \n LowerLim Mi = {!s}".format(np.round(object_absM,2), np.round(object_color,2),np.int(np.round(upperLimDist,2)), np.round(lowerLim_M,2))
+        title_str = "M$_i$ = {!s} \n g-i = {!s} \n UpperLim Dist = {!s} pc \n LowerLim M$_i$ = {!s}".format(np.round(object_absM,2), np.round(object_color,2),np.int(np.round(upperLimDist,2)), np.round(lowerLim_M,2))
     except ValueError:
         upperLimDist = str(upperLimDist)
         lowerLim_M = str(lowerLim_M)
-        title_str = "M$_i$ = {!s} \n g-i = {!s} \n UpperLim Dist = {!s} pc \n LowerLim Mi = {!s}".format(np.round(object_absM,2), np.round(object_color,2),upperLimDist, lowerLim_M)
+        title_str = "M$_i$ = {!s} \n g-i = {!s} \n UpperLim Dist = {!s} pc \n LowerLim M$_i$ = {!s}".format(np.round(object_absM,2), np.round(object_color,2),upperLimDist, lowerLim_M)
 
     plt_ax.set_title(title_str, fontsize=12)
+
 
 def plot_middle(all_LC_props, best_LC, latestFullVartoolsRun, plt_ax, log10FAP=-5.0):
     xi = latestFullVartoolsRun.xi_2
@@ -640,22 +653,23 @@ def plot_middle(all_LC_props, best_LC, latestFullVartoolsRun, plt_ax, log10FAP=-
         #cbar1.set_clim(-1.0, 1.0)
         single_point_color = cbar1.mappable.to_rgba(LC_prop['lc_skew'])#np.array(cbar1.to_rgba(all_skewness[this_object_index], bytes=True)).reshape((1,4))
         plt_ax.scatter(np.log10(LC_prop['P']), np.log10(LC_prop['Amp']), s=200.0, marker="X", color=single_point_color, edgecolors='red')
-        plt_ax.set_xlabel("log(P / d)")
-        plt_ax.set_ylabel("log(A / mag)")
+        plt_ax.set_xlabel("log$_{10}$(P / d)")
+        plt_ax.set_ylabel("log$_{10}$(A / mag)")
         plt_ax.set_xlim([-1.0, 0.5])
         plt_ax.set_ylim([-1.2, 0.5])
-        title_str = "log10(P / day) = "+str(np.round(np.log10(LC_prop['P']),2))+"\n log10(Amp / mag) = "+str(np.round(np.log10(LC_prop['Amp']),2))+"\n Skewness = "+str(np.round(LC_prop['lc_skew'],2))
+        title_str = "log$_{10}$(P / day) = "+str(np.round(np.log10(LC_prop['P']),2))+"\n log$_{10}$(Amp / mag) = "+str(np.round(np.log10(LC_prop['Amp']),2))+"\n Skewness = "+str(np.round(LC_prop['lc_skew'],2))
         plt_ax.set_title(title_str, fontsize=12)
     else:
         #plt_ax.scatter(np.log10(all_ChiSq[where_not_periodic]), all_a95[where_not_periodic], s=1.0, c='grey')
         plt_ax.pcolormesh(xi, yi, zi.reshape(xi.shape), shading='gouraud', cmap=plt.cm.viridis)
-        plt_ax.set_xlabel("log(ChiSq)")
+        plt_ax.set_xlabel("log$_{10}$($\chi^2$)")
         plt_ax.set_ylabel("a95")
-        plt_ax.set_xlim([-0.5, 2.5])
-        plt_ax.set_ylim([0.0, 3.0])
+        plt_ax.set_xlim([-0.5, 2.0])
+        plt_ax.set_ylim([0.0, 2.0])
         plt_ax.scatter(np.log10(LC_prop['Chi2']), LC_prop['a95'], s=100.0, marker="X", color='red')
-        title_str = "log10($\chi^2$) = "+str(np.round(np.log10(LC_prop['Chi2']),2))+"\n a95 = "+str(np.round(LC_prop['a95'],2))
+        title_str = "$\chi^2$ = " + str(np.round(LC_prop['Chi2'], 2)) + "\n log$_{10}$($\chi^2$) = " + str(np.round(np.log10(LC_prop['Chi2']), 2)) + "\n a95 = " + str(np.round(LC_prop['a95'], 2))
         plt_ax.set_title(title_str, fontsize=12)
+
 
 def eqw(temp_lam, temp_flux_scaled, wavelength, flux):
     try:
@@ -697,6 +711,7 @@ def eqw(temp_lam, temp_flux_scaled, wavelength, flux):
     except:
         return np.nan
 
+
 def removeSdssStitchSpike(wavelength, flux):
     """
     All SDSS spectrum have a spike in the spectra between 5569 and 5588 angstroms where
@@ -716,6 +731,7 @@ def removeSdssStitchSpike(wavelength, flux):
                                   [wavelength[lower],wavelength[upper]],
                                   [flux[lower],flux[upper]])
     return flux
+
 
 def makeViDirs(Vi_dir="/Users/benjaminroulston/Dropbox/Research/TDSS/Variable_Stars/WORKING_DIRECTORY/Vi/", ZTF_filters=['g', 'r']):
     datestr = check_output(["/bin/date","+%F"])
@@ -746,6 +762,7 @@ def makeViDirs(Vi_dir="/Users/benjaminroulston/Dropbox/Research/TDSS/Variable_St
     prop_out_dir = Vi_dir+datestr+"/"
     return prop_out_dir, CSS_LC_plot_dir, ZTF_LC_plot_dir, Vi_plots_dir, datestr
 
+
 def checkViRun(Vi_dir="/Users/benjaminroulston/Dropbox/Research/TDSS/Variable_Stars/WORKING_DIRECTORY/Vi/"):
     from pathlib import Path
     datestr = check_output(["/bin/date","+%F"])
@@ -758,6 +775,7 @@ def checkViRun(Vi_dir="/Users/benjaminroulston/Dropbox/Research/TDSS/Variable_St
         return True, prop_id_last, properties
     else:
         return False, 0, None
+
 
 class TDSSprop:
     Vi_dir = "/Users/benjaminroulston/Dropbox/Research/TDSS/Variable_Stars/WORKING_DIRECTORY/Vi/"
@@ -818,16 +836,18 @@ class TDSSprop:
         self.TDSS_fibderid = TDSS_prop['fiber'].astype(int)
         self.TDSS_coords = coords.SkyCoord(ra=self.TDSS_ra*u.degree, dec=self.TDSS_dec*u.degree, frame='icrs')       
         self.Drake_index = np.where(TDSS_prop['Drake_Per'])[0]
-        self.Drake_num_to_vartype = np.genfromtxt("sup_data/"+"darke_var_types.txt", dtype="U", comments="#", delimiter=",")
+        #self.Drake_num_to_vartype = np.genfromtxt("sup_data/"+"darke_var_types.txt", dtype="U", comments="#", delimiter=",")
+        self.Drake_num_to_vartype = Table.read("sup_data/"+"darke_var_types.txt", format='ascii.commented_header')
         self.D_Per = TDSS_prop['Drake_Per']
         self.D_Amp = TDSS_prop['Drake_Vamp']
         self.vartype_num = TDSS_prop['Drake_Cl']
         self.pyhammer_RV = TDSS_prop['PyHammerRV']
-        self.pyhammerChanged = TDSS_prop['PyHammerDiff']
+        # self.pyhammerChanged = TDSS_prop['PyHammerDiff']
         self.upperLimDist = np.sqrt(600.0**2 - self.pyhammer_RV **2) / (4.74e-3*self.gaia_pmTOT )
         self.lowerLimSDSS_M_i = self.SDSS_i + 5.0 - 5.0*np.log10(self.upperLimDist)
         self.lowerLim_gaia_Mg = self.gaia_g + 5.0 - 5.0*np.log10(self.upperLimDist)
         self.lowerLimSDSS_M_r = self.SDSS_r + 5.0 - 5.0*np.log10(self.upperLimDist)
+
 
 class latestFullVartoolsRun:
     def __init__(self, latestFullVartoolsRun_filename, nbins=50):
