@@ -2,7 +2,7 @@
 %autoreload 2
 
 import matplotlib
-#matplotlib.use('TkAGG')
+matplotlib.use('TkAGG')
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 from matplotlib.gridspec import GridSpec
@@ -35,8 +35,7 @@ import tqdm
 
 import warnings
 
-import LCtools
-import mimic_alpha as ma
+import ResearchTools.LCtools as LCtools
 import VarStar_Vi_plot_functions as vi
 
 spec_dir = "/Users/benjaminroulston/Dropbox/Research/TDSS/Variable_Stars/HARD_COPY_ORGINAL_DATA/SDSS_spec/02-26-2020/SDSSspec/"
@@ -97,7 +96,7 @@ plotLCerr = True
 plt_resid = False
 plt_subLC = True
 checkalias = False
-run_onlyPyHammerChanged = True
+# run_onlyPyHammerChanged = True
 
 Nepochs_required = 10
 ##use const modle Chi2 for determining which LC is best
@@ -116,10 +115,11 @@ with warnings.catch_warnings():
             properties[prop_id]['ViCompleted'] = 1
             continue
 
-        if not ROW['PyHammerDiff'] & run_onlyPyHammerChanged:
-            properties[prop_id]['ViCompleted'] = 1
-            continue
-        # prop_id = 16770
+        # if not ROW['PyHammerDiff'] & run_onlyPyHammerChanged:
+        #     properties[prop_id]['ViCompleted'] = 1
+        #     continue
+        
+        # prop_id = 183
         # ROW = TDSSprop.data[prop_id]
 
         object_ra = ROW['ra']
@@ -157,7 +157,7 @@ with warnings.catch_warnings():
 
         vi.plot_CMD(TDSSprop, prop_id, ax3)
 
-        plt.savefig(Vi_plots_dir+ra_string+dec_string+"_Vi.png",dpi=300,bbox_inches='tight')
+        plt.savefig(Vi_plots_dir+ra_string+dec_string+"_Vi.pdf",dpi=600,bbox_inches='tight')
         #plt.show()
         plt.clf()
         plt.close()
