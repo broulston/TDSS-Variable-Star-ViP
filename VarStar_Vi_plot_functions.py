@@ -33,7 +33,7 @@ def low_order_poly(mag, a, b, c, d, e, f_, g):
     return a + b * mag + c * mag**2 + d * mag**3 + e * mag**4 + f_ * mag**5 + g * mag**5
 
 
-def LC_analysis(ROW, TDSSprop, CSS_LC_dir, ZTF_g_LCs, ZTF_r_LCs, ax, CSS_LC_plot_dir, ZTF_LC_plot_dir, Nepochs_required, checkalias=False, plt_subLC=False):
+def LC_analysis(ROW, TDSSprop, CSS_LC_dir, ZTF_g_LCs, ZTF_r_LCs, ax, CSS_LC_plot_dir, ZTF_LC_plot_dir, Nepochs_required, log10FAP=-5, checkalias=False, plt_subLC=False, plot_rejected=False):
     is_CSS = ROW['CSSLC']
     is_ZTF_g = np.isfinite(ROW['ZTF_g_GroupID'])
     is_ZTF_r = np.isfinite(ROW['ZTF_r_GroupID'])
@@ -53,18 +53,19 @@ def LC_analysis(ROW, TDSSprop, CSS_LC_dir, ZTF_g_LCs, ZTF_r_LCs, ax, CSS_LC_plot
                 bad_err_index = np.where(CSS_lc_data['magerr'] - (pred_magerr - shift_const) < 0.0)[0]
                 CSS_lc_data['magerr'][bad_err_index] = pred_magerr[bad_err_index]
 
-                CSS_flc_data, LC_stat_properties = LCtools.process_LC(CSS_lc_data, fltRange=5.0)
-                LC_period_properties, all_CSS_period_properties = LCtools.perdiodSearch(CSS_flc_data, minP=0.1, maxP=100.0, checkalias=checkalias)
+                CSS_flc_data, LC_stat_properties = LCtools.process_LC(CSS_lc_data.copy(), fltRange=5.0)
+                LC_period_properties, all_CSS_period_properties = LCtools.perdiodSearch(CSS_flc_data, minP=0.1, maxP=100.0, log10FAP=log10FAP, checkalias=checkalias)
                 all_CSS_period_properties = {**LC_stat_properties, **all_CSS_period_properties}
                 CSS_prop = {**LC_stat_properties, **LC_period_properties}
                 CSS_prop['lc_id'] = ROW['CSSID']
 
-                CSS_flc_data = [CSS_flc_data['mjd'].data, CSS_flc_data['mag'].data, CSS_flc_data['magerr'].data]
+                # CSS_flc_data = [CSS_flc_data['mjd'].data, CSS_flc_data['mag'].data, CSS_flc_data['magerr'].data]
 
                 if plt_subLC:
                     fig = plt.figure()
                     title = "RA: {!s} DEC: {!s} $|$ P = {!s}d $|$ {!s}w \n log10(FAP) = {!s} $|$ {!s} mag = {!s} $|$ Amp = {!s} $|$ t0 = {!s}".format(ra_string, dec_string, np.round(LC_period_properties['P'], 5), LC_period_properties['time_whittened'], np.round(LC_period_properties['logProb'], 2), "CSS", np.round(ROW['CSSmag'],2), np.round(LC_period_properties['Amp'],3), np.round(all_CSS_period_properties['t0'],5))   
-                    LCtools.plt_lc(CSS_flc_data, all_CSS_period_properties['AFD'], fig=fig, title=title, is_Periodic=all_CSS_period_properties['is_Periodic'], plt_resid=True, phasebin=True, bins=25)
+                    LCtools.plt_lc(CSS_flc_data, all_CSS_period_properties, fig=fig, title=title, plt_resid=True, phasebin=True, bins=25)
+                    # LCtools.plt_lc(CSS_flc_data, all_CSS_period_properties, fig=fig, title=title, plt_resid=True, phasebin=True, bins=25, plot_rejected=plot_rejected)
                     plt.savefig(CSS_LC_plot_dir+ra_string+dec_string+"_CSS.pdf", dpi=600)
                     plt.clf()
                     plt.close()
@@ -81,18 +82,18 @@ def LC_analysis(ROW, TDSSprop, CSS_LC_dir, ZTF_g_LCs, ZTF_r_LCs, ax, CSS_LC_plot
     if is_ZTF_g:
         ZTF_g_lc_data = ZTF_g_LCs[(ZTF_g_LCs['GroupID'] == ROW['ZTF_g_GroupID'])]['mjd', 'mag', 'magerr']
         if len(ZTF_g_lc_data)>=Nepochs_required:
-            ZTF_gflc_data, LC_stat_properties = LCtools.process_LC(ZTF_g_lc_data, fltRange=5.0)
-            LC_period_properties, all_ZTFg_period_properties = LCtools.perdiodSearch(ZTF_gflc_data, minP=0.1, maxP=100.0, checkalias=checkalias)
+            ZTF_gflc_data, LC_stat_properties = LCtools.process_LC(ZTF_g_lc_data.copy(), fltRange=5.0)
+            LC_period_properties, all_ZTFg_period_properties = LCtools.perdiodSearch(ZTF_gflc_data, minP=0.1, maxP=100.0, log10FAP=log10FAP, checkalias=checkalias)
             all_ZTFg_period_properties = {**LC_stat_properties, **all_ZTFg_period_properties}
             ZTF_g_prop = {**LC_stat_properties, **LC_period_properties}
             ZTF_g_prop['lc_id'] =  ROW['ZTF_g_GroupID']
 
-            ZTF_gflc_data = [ZTF_gflc_data['mjd'].data, ZTF_gflc_data['mag'].data, ZTF_gflc_data['magerr'].data]
+            # ZTF_gflc_data = [ZTF_gflc_data['mjd'].data, ZTF_gflc_data['mag'].data, ZTF_gflc_data['magerr'].data]
 
             if plt_subLC:
                 fig = plt.figure()
                 title = "RA: {!s} DEC: {!s} $|$ P = {!s}d $|$ {!s}w \n log10(FAP) = {!s} $|$ {!s} mag = {!s} $|$ Amp = {!s} $|$ t0 = {!s}".format(ra_string, dec_string, np.round(LC_period_properties['P'], 5), LC_period_properties['time_whittened'], np.round(LC_period_properties['logProb'], 2), "ZTF g", np.round(ROW['ZTF_g_mag'],2), np.round(LC_period_properties['Amp'],3), np.round(all_ZTFg_period_properties['t0'],5))   
-                LCtools.plt_lc(ZTF_gflc_data, all_ZTFg_period_properties['AFD'], fig=fig, title=title, is_Periodic=all_ZTFg_period_properties['is_Periodic'], plt_resid=True, phasebin=True, bins=25)
+                LCtools.plt_lc(ZTF_gflc_data, all_ZTFg_period_properties, fig=fig, title=title, plt_resid=True, phasebin=True, bins=25, plot_rejected=plot_rejected)
                 plt.savefig(ZTF_LC_plot_dir+"g/"+ra_string+dec_string+"_ZTFg.pdf", dpi=600)
                 plt.clf()
                 plt.close()
@@ -106,18 +107,18 @@ def LC_analysis(ROW, TDSSprop, CSS_LC_dir, ZTF_g_LCs, ZTF_r_LCs, ax, CSS_LC_plot
     if is_ZTF_r:
         ZTF_r_lc_data = ZTF_r_LCs[(ZTF_r_LCs['GroupID'] == ROW['ZTF_r_GroupID'])]['mjd', 'mag', 'magerr']
         if len(ZTF_r_lc_data)>=Nepochs_required:
-            ZTF_rflc_data, LC_stat_properties = LCtools.process_LC(ZTF_r_lc_data, fltRange=5.0)
-            LC_period_properties, all_ZTFr_period_properties = LCtools.perdiodSearch(ZTF_rflc_data, minP=0.1, maxP=100.0, checkalias=checkalias)
+            ZTF_rflc_data, LC_stat_properties = LCtools.process_LC(ZTF_r_lc_data.copy(), fltRange=5.0)
+            LC_period_properties, all_ZTFr_period_properties = LCtools.perdiodSearch(ZTF_rflc_data, minP=0.1, maxP=100.0, log10FAP=log10FAP, checkalias=checkalias)
             all_ZTFr_period_properties = {**LC_stat_properties, **all_ZTFr_period_properties}
             ZTF_r_prop = {**LC_stat_properties, **LC_period_properties}
             ZTF_r_prop['lc_id'] =  ROW['ZTF_r_GroupID']
 
-            ZTF_rflc_data = [ZTF_rflc_data['mjd'].data, ZTF_rflc_data['mag'].data, ZTF_rflc_data['magerr'].data]
+            # ZTF_rflc_data = [ZTF_rflc_data['mjd'].data, ZTF_rflc_data['mag'].data, ZTF_rflc_data['magerr'].data]
 
             if plt_subLC:
                 fig = plt.figure()
                 title = "RA: {!s} DEC: {!s} $|$ P = {!s}d $|$ {!s}w \n log10(FAP) = {!s} $|$ {!s} mag = {!s} $|$ Amp = {!s} $|$ t0 = {!s}".format(ra_string, dec_string, np.round(LC_period_properties['P'], 5), LC_period_properties['time_whittened'], np.round(LC_period_properties['logProb'], 2), "ZTF r", np.round(ROW['ZTF_r_mag'],2), np.round(LC_period_properties['Amp'],3), np.round(all_ZTFr_period_properties['t0'],5))   
-                LCtools.plt_lc(ZTF_rflc_data, all_ZTFr_period_properties['AFD'], fig=fig, title=title, is_Periodic=all_ZTFr_period_properties['is_Periodic'], plt_resid=True, phasebin=True, bins=25)
+                LCtools.plt_lc(ZTF_rflc_data, all_ZTFr_period_properties, fig=fig, title=title, plt_resid=True, phasebin=True, bins=25, plot_rejected=plot_rejected)
                 plt.savefig(ZTF_LC_plot_dir+"r/"+ra_string+dec_string+"_ZTFr.pdf", dpi=600)
                 plt.clf()
                 plt.close()
@@ -138,15 +139,15 @@ def LC_analysis(ROW, TDSSprop, CSS_LC_dir, ZTF_g_LCs, ZTF_r_LCs, ax, CSS_LC_plot
     if best_LC=='CSS':
         title_line1 = "CSS ID: {!s} $|$ P={!s} $|$ logProb={!s} \n Amp={!s} $|$ ngood={!s} $|$ nreject={!s} $|$ Con={!s} \n nabove={!s} ({!s}\%) $|$ nbelow={!s} ({!s}\%) $|$ VarStat={!s} \n Tspan100={!s} $|$ Tspan95={!s}\n m={!s} $|$ b={!s} $|$ $\chi^2$={!s} \n a={!s} $|$ b={!s} $|$ c={!s} $|$ $\chi^2$={!s}".format(ROW['CSSID'], str(np.round(all_CSS_period_properties['P'],5))+"w"+str(all_CSS_period_properties['time_whittened']), np.round(all_CSS_period_properties['logProb'],3), np.round(all_CSS_period_properties['Amp'],2), all_CSS_period_properties['ngood'], all_CSS_period_properties['nrejects'], np.round(all_CSS_period_properties['Con'],3), all_CSS_period_properties['nabove'], np.int(np.round((all_CSS_period_properties['nabove']/all_CSS_period_properties['ngood'])*100,2)), all_CSS_period_properties['nbelow'], np.int(np.round((all_CSS_period_properties['nbelow']/all_CSS_period_properties['ngood'])*100,2)), np.round(all_CSS_period_properties['VarStat'],2), np.round(all_CSS_period_properties['Tspan100'],2), np.round(all_CSS_period_properties['Tspan95'],2), np.round(all_CSS_period_properties['m'],4), np.round(all_CSS_period_properties['b_lin'],4), np.round(all_CSS_period_properties['chi2_lin'],2), np.round(all_CSS_period_properties['a'],4), np.round(all_CSS_period_properties['b_quad'],4), np.round(all_CSS_period_properties['c'],4),np.round(all_CSS_period_properties['chi2_quad'],2))
         title_str = title_line1+title_line2
-        plt_lc(CSS_flc_data, all_CSS_period_properties['AFD'], title=title_str, is_Periodic=all_CSS_period_properties['is_Periodic'], ax=ax)
+        plt_lc(CSS_flc_data, all_CSS_period_properties, title=title_str, ax=ax, plot_rejected=plot_rejected)
     elif best_LC=='ZTF_g':
         title_line1 = "ZTF g GroupID: {!s} $|$ P={!s} $|$ logProb={!s} \n Amp={!s} $|$ ngood={!s} $|$ nreject={!s} $|$ Con={!s} \n nabove={!s} ({!s}\%) $|$ nbelow={!s} ({!s}\%) $|$ VarStat={!s} \n Tspan100={!s} $|$ Tspan95={!s}\n m={!s} $|$ b={!s} $|$ $\chi^2$={!s} \n a={!s} $|$ b={!s} $|$ c={!s} $|$ $\chi^2$={!s}".format(ROW['ZTF_g_GroupID'], str(np.round(all_ZTFg_period_properties['P'],5))+"w"+str(all_ZTFg_period_properties['time_whittened']), np.round(all_ZTFg_period_properties['logProb'],3), np.round(all_ZTFg_period_properties['Amp'],2), all_ZTFg_period_properties['ngood'], all_ZTFg_period_properties['nrejects'], np.round(all_ZTFg_period_properties['Con'],3), all_ZTFg_period_properties['nabove'], np.int(np.round((all_ZTFg_period_properties['nabove']/all_ZTFg_period_properties['ngood'])*100,2)), all_ZTFg_period_properties['nbelow'], np.int(np.round((all_ZTFg_period_properties['nbelow']/all_ZTFg_period_properties['ngood'])*100,2)), np.round(all_ZTFg_period_properties['VarStat'],2), np.round(all_ZTFg_period_properties['Tspan100'],2), np.round(all_ZTFg_period_properties['Tspan95'],2), np.round(all_ZTFg_period_properties['m'],4), np.round(all_ZTFg_period_properties['b_lin'],4), np.round(all_ZTFg_period_properties['chi2_lin'],2), np.round(all_ZTFg_period_properties['a'],4), np.round(all_ZTFg_period_properties['b_quad'],4), np.round(all_ZTFg_period_properties['c'],4),np.round(all_ZTFg_period_properties['chi2_quad'],2))
         title_str = title_line1+title_line2
-        plt_lc(ZTF_gflc_data, all_ZTFg_period_properties['AFD'], title=title_str, is_Periodic=all_ZTFg_period_properties['is_Periodic'], ax=ax)
+        plt_lc(ZTF_gflc_data, all_ZTFg_period_properties, title=title_str, ax=ax, plot_rejected=plot_rejected)
     elif best_LC=='ZTF_r':
         title_line1 = "ZTF r GroupID: {!s} $|$ P={!s} $|$ logProb={!s} \n Amp={!s} $|$ ngood={!s} $|$ nreject={!s} $|$ Con={!s} \n nabove={!s} ({!s}\%) $|$ nbelow={!s} ({!s}\%) $|$ VarStat={!s} \n Tspan100={!s} $|$ Tspan95={!s}\n m={!s} $|$ b={!s} $|$ $\chi^2$={!s} \n a={!s} $|$ b={!s} $|$ c={!s} $|$ $\chi^2$={!s}".format(ROW['ZTF_r_GroupID'], str(np.round(all_ZTFr_period_properties['P'],5))+"w"+str(all_ZTFr_period_properties['time_whittened']), np.round(all_ZTFr_period_properties['logProb'],3), np.round(all_ZTFr_period_properties['Amp'],2), all_ZTFr_period_properties['ngood'], all_ZTFr_period_properties['nrejects'], np.round(all_ZTFr_period_properties['Con'],3), all_ZTFr_period_properties['nabove'], np.int(np.round((all_ZTFr_period_properties['nabove']/all_ZTFr_period_properties['ngood'])*100,2)), all_ZTFr_period_properties['nbelow'], np.int(np.round((all_ZTFr_period_properties['nbelow']/all_ZTFr_period_properties['ngood'])*100,2)), np.round(all_ZTFr_period_properties['VarStat'],2), np.round(all_ZTFr_period_properties['Tspan100'],2), np.round(all_ZTFr_period_properties['Tspan95'],2), np.round(all_ZTFr_period_properties['m'],4), np.round(all_ZTFr_period_properties['b_lin'],4), np.round(all_ZTFr_period_properties['chi2_lin'],2), np.round(all_ZTFr_period_properties['a'],4), np.round(all_ZTFr_period_properties['b_quad'],4), np.round(all_ZTFr_period_properties['c'],4),np.round(all_ZTFr_period_properties['chi2_quad'],2))
         title_str = title_line1+title_line2
-        plt_lc(ZTF_rflc_data, all_ZTFr_period_properties['AFD'], title=title_str, is_Periodic=all_ZTFr_period_properties['is_Periodic'], ax=ax)
+        plt_lc(ZTF_rflc_data, all_ZTFr_period_properties, title=title_str, ax=ax, plot_rejected=plot_rejected)
     else:
         assert best_LC is None, f"ERROR: no best LC found: ({best_LC})"
 
@@ -223,21 +224,29 @@ def find_best_LC(all_CSS_period_properties, all_ZTFg_period_properties, all_ZTFr
             return base_LCs[np.argmax(ChiSqs)]
 
 
-def plt_lc(lc_data, AFD_data, ax, title="", is_Periodic=False, plt_resid=False, phasebin=False, bins=25, RV=False):
-    if isinstance(lc_data, Table):
-        mjd = lc_data['mjd'].data
-        mag = lc_data['mag'].data
-        err = lc_data['magerr'].data
-    else:
-        mjd, mag, err = lc_data
+def plt_lc(lc_data, all_period_properties, ax, title="", plt_resid=False, phasebin=False, bins=25, RV=False, plot_rejected=False):
+    goodQualIndex = np.where(lc_data['QualFlag']==True)[0]
+    badQualIndex = np.where(lc_data['QualFlag']==False)[0]
+    mjd = lc_data['mjd'][goodQualIndex].data
+    mag = lc_data['mag'][goodQualIndex].data
+    err = lc_data['magerr'][goodQualIndex].data
 
+    AFD_data = all_period_properties['AFD']
     if len(AFD_data)==8:
         deasliased_period, Nterms, phase_fit, y_fit, phased_t, resid, reduced_ChiS, mfit = AFD_data
     else:
         Nterms, phase_fit, y_fit, phased_t, resid, reduced_ChiS, mfit = AFD_data
 
+    t0 = all_period_properties['t0']
+    P = all_period_properties['P']
+    mjd_bad = lc_data['mjd'][badQualIndex].data
+    phase_bad = ((mjd_bad - t0) / P) % 1
+    mag_bad = lc_data['mag'][badQualIndex].data
+    err_bad = lc_data['magerr'][badQualIndex].data
+
     binned_phase, binned_mag, binned_err = LCtools.bin_phaseLC(phased_t, mag, err, bins=bins)
 
+    is_Periodic = all_period_properties['is_Periodic']
     if  is_Periodic:
         if plt_resid:
             frame1=fig.add_axes((.1,.3,.8,.6))
@@ -254,6 +263,9 @@ def plt_lc(lc_data, AFD_data, ax, title="", is_Periodic=False, plt_resid=False, 
         else:
             ax.errorbar(phased_t, mag, err, fmt='.k', ecolor='gray', lw=1, ms=4, capsize=1.5, alpha=0.3)
             ax.errorbar(phased_t+1, mag, err, fmt='.k', ecolor='gray', lw=1, ms=4, capsize=1.5, alpha=0.3)
+            if plot_rejected:
+                plt_ax.errorbar(phase_bad, mag_bad, err_bad, fmt='.r', ecolor='r', lw=1, ms=4, capsize=1.5, alpha=0.3)
+                plt_ax.errorbar(phase_bad+1, mag_bad, err_bad, fmt='.r', ecolor='r', lw=1, ms=4, capsize=1.5, alpha=0.3)
         #ax.errorbar(phased_t+2, mag, err, fmt='.k', ecolor='gray', lw=1, ms=4, capsize=1.5, alpha=0.3)
 
         # N_terms
@@ -311,6 +323,8 @@ def plt_lc(lc_data, AFD_data, ax, title="", is_Periodic=False, plt_resid=False, 
             ax.errorbar(mjd, mag, err, fmt='.k', ecolor='gray', lw=1, ms=4, capsize=1.5)
         else:
             ax.errorbar(mjd, mag, err, fmt='.k', ecolor='gray', lw=1, ms=4, capsize=1.5, alpha=0.3)
+            if plot_rejected:
+                ax.errorbar(mjd_bad, mag_bad, err_bad, fmt='.r', ecolor='r', lw=1, ms=4, capsize=1.5, alpha=0.3)
 
         fmagmn = np.mean(mag)
         ferrmn = np.mean(err)
@@ -343,6 +357,16 @@ def plot_SDSSspec(ROW, TDSSprop, prop_id, spec_dir, plt_ax):
         y_smooth = np.convolve(y, box, mode='valid')
         return y_smooth
 
+    def splitSpecType(s):
+        # head = s.rstrip('0123456789')
+        # tail = s[len(head):]
+        if 'dC' in s:
+            head = 'dC'
+            tail = s[-1]
+        else:
+            head, tail, _ = re.split('(\d.*)', s)
+        return head, tail
+
     xmin = 3800
     xmax = 10000
     sig_range = 3.0
@@ -373,12 +397,14 @@ def plot_SDSSspec(ROW, TDSSprop, prop_id, spec_dir, plt_ax):
     if "+" in specTypeMatch:
         template_file_dir = "/Users/benjaminroulston/Dropbox/GitHub/PyHammer/resources/templates_SB2/"
         tempName = specTypeMatch+".fits"
-        specTypeMatch_code = specTypeMatch[0]
-    else:
-        specTypeMatch_code = re.split('(\d+)',specTypeMatch)[0]
-        specTypeMatch_subType_code = re.split('(\d+)',specTypeMatch)[1]
+        spectype1, spectype2 = specTypeMatch.replace('+', " ").split()
 
-        spec_code_alph = np.array(['O','B','A','F','G','K','M','L','C','WD'])
+        spectype1 = splitSpecType(spectype1)[0]
+        spectype2 = splitSpecType(spectype2)[0]
+    else:
+        specTypeMatch_code, specTypeMatch_subType_code = splitSpecType(specTypeMatch)
+
+        spec_code_alph = np.array(['O','B','A','F','G','K','M','L','dC','DA'])
         spec_code_num = np.arange(10)
 
         this_spec_num_code = np.where(spec_code_alph == specTypeMatch_code)[0][0]
@@ -414,23 +440,38 @@ def plot_SDSSspec(ROW, TDSSprop, prop_id, spec_dir, plt_ax):
         elif this_spec_num_code == 7: 
             tempName = 'L' + str(specTypeMatch_subType_code) + '.fits'
         elif this_spec_num_code == 8: 
-            tempName = 'C' + str(specTypeMatch_subType_code) + '.fits'
+            tempName = 'dC' + str(specTypeMatch_subType_code) + '.fits'
         elif this_spec_num_code == 9: 
-            tempName = 'WD' + str(specTypeMatch_subType_code) + '.fits'
+            tempName = 'DA' + str(specTypeMatch_subType_code) + '.fits'
     # Open the template
-    temp = fits.open(template_file_dir+tempName)
+    temp = fits.open(template_file_dir + tempName)
     temp_loglam = temp[1].data.field('LogLam')
     temp_lam = 10.0**temp_loglam
     temp_flux = temp[1].data.field('Flux')
-    #line_lis_all = np.genfromtxt("aaaLineList_2.list",comments='#',dtype="S")
-    #line_lis_all = np.genfromtxt(line_list_dir+"H_lines.list",comments='#',dtype="S")
-    #line_lis_all = np.genfromtxt(line_list_dir+"spec_types/"+matched_spec_type+"star_lines.list",comments='#',dtype="S")
-    line_lis_all = np.genfromtxt(line_list_dir+"spec_types/"+specTypeMatch_code+"star_lines.list",comments='#',dtype="S")
 
-    lineList_wavelength = np.float64(line_lis_all[:,0])
-    lineList_labels = np.empty(lineList_wavelength.size,dtype="U60")
-    for ii in range(lineList_wavelength.size):
-        lineList_labels[ii] = line_lis_all[ii,1].decode(encoding="utf-8", errors="strict")
+    if "+" in specTypeMatch:
+        line_lis_all1 = np.genfromtxt(line_list_dir + "spec_types/" + spectype1 + "star_lines.list", comments='#', dtype="S")
+        line_lis_all2 = np.genfromtxt(line_list_dir + "spec_types/" + spectype2 + "star_lines.list", comments='#', dtype="S")
+
+        lineList_wavelength1 = np.float64(line_lis_all1[:,0])
+        lineList_wavelength2 = np.float64(line_lis_all2[:,0])
+        lineList_wavelength = np.hstack((lineList_wavelength1, lineList_wavelength2))
+        lineList_labels = np.empty(lineList_wavelength.size,dtype="U60")
+        for ii in range(lineList_wavelength1.size):
+            lineList_labels[ii] = line_lis_all1[ii,1].decode(encoding="utf-8", errors="strict")
+        for ii in range(lineList_wavelength2.size):
+            jj = ii + lineList_wavelength1.size
+            lineList_labels[jj] = line_lis_all2[ii,1].decode(encoding="utf-8", errors="strict")
+    else:
+        #line_lis_all = np.genfromtxt("aaaLineList_2.list",comments='#',dtype="S")
+        #line_lis_all = np.genfromtxt(line_list_dir+"H_lines.list",comments='#',dtype="S")
+        #line_lis_all = np.genfromtxt(line_list_dir+"spec_types/"+matched_spec_type+"star_lines.list",comments='#',dtype="S")
+        line_lis_all = np.genfromtxt(line_list_dir+"spec_types/"+specTypeMatch_code+"star_lines.list",comments='#',dtype="S")
+
+        lineList_wavelength = np.float64(line_lis_all[:,0])
+        lineList_labels = np.empty(lineList_wavelength.size,dtype="U60")
+        for ii in range(lineList_wavelength.size):
+            lineList_labels[ii] = line_lis_all[ii,1].decode(encoding="utf-8", errors="strict")
 
     trim_spectrum_left = 10 #number of pixels to trim from left side
     smooth_flux = smooth(flux[trim_spectrum_left:],box_size)
@@ -459,23 +500,23 @@ def plot_SDSSspec(ROW, TDSSprop, prop_id, spec_dir, plt_ax):
         EqW_string = ""
         plot_title = str("RA: "+ra_string+", DEC: "+dec_string+" $|$ cz = "+str(cz)+"$\pm$"+str(cz_err)+" km s$^{-1}$ $|$ SDSS Subclass = "
                     +str(subclass)+"\n PyHammer = "+specTypeMatch+EqW_string+", RV = "+pyhammer_RV+" km s$^{-1}$"+"\n "
-                    +"prop. $|$ Plate = "+plate_string+" MJD = "+mjd_string+" Fiberid = "+fiberid_string+" $|$ GaiaDR2 Dist = "+str(np.int(np.round(ROW['rest_GAIADR2'],2)))
-                    +" pc (SNR = "+str(np.round(ROW['parallax_GAIADR2']/ROW['parallax_error_GAIADR2'],2))+") $|$ GaiaDR2 PMtot = "+str(np.round(TDSSprop.gaia_pmTOT[prop_id],2))
+                    +"prop. $|$ Plate = "+plate_string+" MJD = "+mjd_string+" Fiberid = "+fiberid_string+" $|$ GaiaDR2 Dist = "+str(np.int(np.round(ROW['rest_GaiaDR2'],2)))
+                    +" pc (SNR = "+str(np.round(ROW['parallax_GaiaDR2']/ROW['parallax_error_GaiaDR2'],2))+") $|$ GaiaDR2 PMtot = "+str(np.round(TDSSprop.gaia_pmTOT[prop_id],2))
                     +" mas/yr (SNR = "+str(np.round(TDSSprop.gaia_pmTOT[prop_id]/TDSSprop.gaia_pmTOT_error[prop_id], 2))+")")
     elif this_EqW > -2.0:
         EqW_string = ""
         plot_title = str("RA: "+ra_string+", DEC: "+dec_string+" $|$ cz = "+str(cz)+"$\pm$"+str(cz_err)+" km s$^{-1}$ $|$ SDSS Subclass = "
                     +str(subclass)+"\n PyHammer = "+specTypeMatch+EqW_string+", RV = "+pyhammer_RV+" km s$^{-1}$"+"\n "
-                    +"prop. $|$ Plate = "+plate_string+" MJD = "+mjd_string+" Fiberid = "+fiberid_string+" $|$ GaiaDR2 Dist = "+str(np.int(np.round(ROW['rest_GAIADR2'],2)))
-                    +" pc (SNR = "+str(np.round(ROW['parallax_GAIADR2']/ROW['parallax_error_GAIADR2'],2))+") $|$ GaiaDR2 PMtot = "+str(np.round(TDSSprop.gaia_pmTOT[prop_id],2))
+                    +"prop. $|$ Plate = "+plate_string+" MJD = "+mjd_string+" Fiberid = "+fiberid_string+" $|$ GaiaDR2 Dist = "+str(np.int(np.round(ROW['rest_GaiaDR2'],2)))
+                    +" pc (SNR = "+str(np.round(ROW['parallax_GaiaDR2']/ROW['parallax_error_GaiaDR2'],2))+") $|$ GaiaDR2 PMtot = "+str(np.round(TDSSprop.gaia_pmTOT[prop_id],2))
                     +" mas/yr (SNR = "+str(np.round(TDSSprop.gaia_pmTOT[prop_id]/TDSSprop.gaia_pmTOT_error[prop_id], 2))+")")
     else:
         EqW_string = "e"
         this_EqW_str = str(np.round(this_EqW,2))
         plot_title = str("RA: "+ra_string+", DEC: "+dec_string+" $|$ cz = "+str(cz)+"$\pm$"+str(cz_err)+" km s$^{-1}$ $|$ SDSS Subclass = "
                     +str(subclass)+"\n PyHammer = "+specTypeMatch+EqW_string+", RV = "+pyhammer_RV+" km s$^{-1}$, EQW = "+this_EqW_str+"\n "
-                    +"prop. $|$ Plate = "+plate_string+" MJD = "+mjd_string+" Fiberid = "+fiberid_string+" $|$ GaiaDR2 Dist = "+str(np.int(np.round(ROW['rest_GAIADR2'],2)))
-                    +" pc (SNR = "+str(np.round(ROW['parallax_GAIADR2']/ROW['parallax_error_GAIADR2'],2))+") $|$ GaiaDR2 PMtot = "+str(np.round(TDSSprop.gaia_pmTOT[prop_id],2))
+                    +"prop. $|$ Plate = "+plate_string+" MJD = "+mjd_string+" Fiberid = "+fiberid_string+" $|$ GaiaDR2 Dist = "+str(np.int(np.round(ROW['rest_GaiaDR2'],2)))
+                    +" pc (SNR = "+str(np.round(ROW['parallax_GaiaDR2']/ROW['parallax_error_GaiaDR2'],2))+") $|$ GaiaDR2 PMtot = "+str(np.round(TDSSprop.gaia_pmTOT[prop_id],2))
                     +" mas/yr (SNR = "+str(np.round(TDSSprop.gaia_pmTOT[prop_id]/TDSSprop.gaia_pmTOT_error[prop_id], 2))+")")
 
     plt_ax.plot(smooth_wavelength,smooth_flux,color='black',linewidth=0.5)
@@ -576,6 +617,13 @@ def plot_CMD(TDSSprop, prop_id, plt_ax):
     #M_r_zabms = -0.75 + M_r
     M_i_zabms = -0.75 + M_i
 
+    l = TDSSprop.gaia_l[prop_id]
+    b = TDSSprop.gaia_b[prop_id]
+    Z = TDSSprop.gaia_Z[prop_id]
+    U = TDSSprop.gaia_U[prop_id]
+    V = TDSSprop.gaia_V[prop_id]
+    W = TDSSprop.gaia_W[prop_id]
+
     # Gaia_CMD_dir = "/Users/benjaminroulston/Dropbox/Research/TDSS/Variable_Stars/WORKING_DIRECTORY/Vi/Vi_program/sup_data/"
     # Gaia_CMD_data = fits.open(Gaia_CMD_dir+"Gaia_table1b_for_CMD.fits")
 
@@ -610,16 +658,16 @@ def plot_CMD(TDSSprop, prop_id, plt_ax):
 
     upperLimDist
     try:
-        title_str = "M$_i$ = {!s} \n g-i = {!s} \n UpperLim Dist = {!s} pc \n LowerLim M$_i$ = {!s}".format(np.round(object_absM,2), np.round(object_color,2),np.int(np.round(upperLimDist,2)), np.round(lowerLim_M,2))
+        title_str = "M$_i$ = {!s} \n g-i = {!s} \n UpperLim Dist = {!s} pc \n LowerLim M$_i$ = {!s} \n l = {!s}$^\circ$ b = {!s}$^\circ$ Z = {!s}pc \n U = {!s} V = {!s} W = {!s} (km/s)".format(np.round(object_absM,2), np.round(object_color,2),np.int(np.round(upperLimDist,2)), np.round(lowerLim_M,2), np.round(l,2), np.round(b,2), np.round(Z,2), np.round(U,2), np.round(V,2), np.round(W,2))
     except ValueError:
         upperLimDist = str(upperLimDist)
         lowerLim_M = str(lowerLim_M)
-        title_str = "M$_i$ = {!s} \n g-i = {!s} \n UpperLim Dist = {!s} pc \n LowerLim M$_i$ = {!s}".format(np.round(object_absM,2), np.round(object_color,2),upperLimDist, lowerLim_M)
+        title_str = "M$_i$ = {!s} \n g-i = {!s} \n UpperLim Dist = {!s} pc \n LowerLim M$_i$ = {!s} \n l = {!s}$^\circ$ b = {!s}$^\circ$ Z = {!s}pc \n U = {!s} V = {!s} W = {!s} (km/s)".format(np.round(object_absM,2), np.round(object_color,2),upperLimDist, lowerLim_M, np.round(l,2), np.round(b,2), np.round(Z,2), np.round(U,2), np.round(V,2), np.round(W,2))
 
     plt_ax.set_title(title_str, fontsize=12)
 
 
-def plot_middle(all_LC_props, best_LC, latestFullVartoolsRun, plt_ax, log10FAP=-5.0):
+def plot_middle(all_LC_props, best_LC, latestFullVartoolsRun, plt_ax, log10FAP=-10.0):
     xi = latestFullVartoolsRun.xi_2
     yi = latestFullVartoolsRun.yi_2
     zi = latestFullVartoolsRun.zi_2
@@ -629,38 +677,36 @@ def plot_middle(all_LC_props, best_LC, latestFullVartoolsRun, plt_ax, log10FAP=-
     all_Per_ls = latestFullVartoolsRun.all_Per_ls
     all_logProb_ls = latestFullVartoolsRun.all_logProb_ls
     all_Amp_ls = latestFullVartoolsRun.all_Amp_ls
-    all_a95 = latestFullVartoolsRun.all_a95
-    all_ChiSq = latestFullVartoolsRun.all_ChiSq
     all_skewness = latestFullVartoolsRun.all_skewness
 
-    where_periodic = np.where(all_logProb_ls <= log10FAP)[0]
-    where_not_periodic = np.where(all_logProb_ls > log10FAP)[0]
-    is_periodic = LC_prop['logProb'] <= log10FAP
+    logP, logA, skew, logProb = dealias(np.log10(all_Per_ls), np.log10(all_Amp_ls),
+                                        all_skewness, all_logProb_ls)
 
-    sample_around_logP_region = 0.05
+    is_periodic = LC_prop['logProb'] <= log10FAP
     if is_periodic:
         cm = plt.cm.get_cmap('viridis')
-        log_allPer = np.log10(all_Per_ls[where_periodic])
-        log_allAmp = np.log10(all_Amp_ls[where_periodic])
-        where_notPlot = ((log_allPer >= np.log10(0.5)-sample_around_logP_region) & (log_allPer <= np.log10(0.5)+sample_around_logP_region)) | ((log_allPer >= np.log10(1.0)-sample_around_logP_region) & (log_allPer <= np.log10(1.0)+sample_around_logP_region))
-        this_all_skewness = all_skewness[where_periodic]
-        sc = plt_ax.scatter(log_allPer[~where_notPlot], log_allAmp[~where_notPlot], s=2.5, c=this_all_skewness[~where_notPlot], cmap=cm, vmin=-1, vmax=1)
-        divider1 = make_axes_locatable(plt_ax)  
+        # log_allPer = np.log10(all_Per_ls[where_periodic])
+        # log_allAmp = np.log10(all_Amp_ls[where_periodic])
+        # where_notPlot = ((log_allPer >= np.log10(0.5)-sample_around_logP_region) & (log_allPer <= np.log10(0.5)+sample_around_logP_region)) | ((log_allPer >= np.log10(1.0)-sample_around_logP_region) & (log_allPer <= np.log10(1.0)+sample_around_logP_region))
+        # this_all_skewness = all_skewness[where_periodic]
+        # sc = plt_ax.scatter(log_allPer[~where_notPlot], log_allAmp[~where_notPlot], s=2.5, c=this_all_skewness[~where_notPlot], cmap=cm, vmin=-1, vmax=1)
+        sc = plt_ax.scatter(logP, logA, s=2.5, c=skew, cmap=cm, vmin=-1, vmax=1)
+        divider1 = make_axes_locatable(plt_ax)
         cax1 = divider1.append_axes("right", size="5%", pad=0.05)
         cbar1 = plt.colorbar(sc, cax=cax1)
         cbar1.ax.get_yaxis().labelpad = 0
         cbar1.ax.set_ylabel('Skewness', rotation=270)
-        #cbar1.set_clim(-1.0, 1.0)
-        single_point_color = cbar1.mappable.to_rgba(LC_prop['lc_skew'])#np.array(cbar1.to_rgba(all_skewness[this_object_index], bytes=True)).reshape((1,4))
+
+        single_point_color = cbar1.mappable.to_rgba(LC_prop['lc_skew'])
         plt_ax.scatter(np.log10(LC_prop['P']), np.log10(LC_prop['Amp']), s=200.0, marker="X", color=single_point_color, edgecolors='red')
+
         plt_ax.set_xlabel("log$_{10}$(P / d)")
         plt_ax.set_ylabel("log$_{10}$(A / mag)")
-        plt_ax.set_xlim([-1.0, 0.5])
-        plt_ax.set_ylim([-1.2, 0.5])
+        plt_ax.set_xlim([-1.5, 0.77])
+        plt_ax.set_ylim([-1.05, 0.3])
         title_str = "log$_{10}$(P / day) = "+str(np.round(np.log10(LC_prop['P']),2))+"\n log$_{10}$(Amp / mag) = "+str(np.round(np.log10(LC_prop['Amp']),2))+"\n Skewness = "+str(np.round(LC_prop['lc_skew'],2))
         plt_ax.set_title(title_str, fontsize=12)
     else:
-        #plt_ax.scatter(np.log10(all_ChiSq[where_not_periodic]), all_a95[where_not_periodic], s=1.0, c='grey')
         plt_ax.pcolormesh(xi, yi, zi.reshape(xi.shape), shading='gouraud', cmap=plt.cm.viridis)
         plt_ax.set_xlabel("log$_{10}$($\chi^2$)")
         plt_ax.set_ylabel("a95")
@@ -669,6 +715,48 @@ def plot_middle(all_LC_props, best_LC, latestFullVartoolsRun, plt_ax, log10FAP=-
         plt_ax.scatter(np.log10(LC_prop['Chi2']), LC_prop['a95'], s=100.0, marker="X", color='red')
         title_str = "$\chi^2$ = " + str(np.round(LC_prop['Chi2'], 2)) + "\n log$_{10}$($\chi^2$) = " + str(np.round(np.log10(LC_prop['Chi2']), 2)) + "\n a95 = " + str(np.round(LC_prop['a95'], 2))
         plt_ax.set_title(title_str, fontsize=12)
+
+
+def dealias(logP, logA, skew, logProb, sample_around_logP_region=0.05, log10FAP=-10):
+    where_notPlot = ((logP >= np.log10(0.5) - sample_around_logP_region) & (logP <= np.log10(0.5) + sample_around_logP_region)) | ((logP >= np.log10(1.0) - sample_around_logP_region) & (logP <= np.log10(1.0) + sample_around_logP_region))
+    logP = logP[~where_notPlot]
+    logA = logA[~where_notPlot]
+    skew = skew[~where_notPlot]
+    logProb = logProb[~where_notPlot]
+    # specType = specType[~where_notPlot]
+
+    where_periodic = np.where(logProb <= log10FAP)[0]
+    logP = logP[where_periodic]
+    logA = logA[where_periodic]
+    skew = skew[where_periodic]
+    logProb = logProb[where_periodic]
+    # specType = specType[where_periodic]
+
+    # specType = periodic_prop['PyHammerSpecType']
+    # specType = np.array([ii.strip().decode() for ii in specType.data.data])
+
+    # maintype = np.array([ii[0] for ii in specType])
+    # maintypeNum = np.array([np.where(letterSpt == ii)[0][0] for ii in maintype])
+
+    cut_index = (skew < -0.4) & (logP < -0.5)
+    # cut_spec_type = specType[cut_index]
+    # cut_maintype = np.array([ii[0] for ii in cut_spec_type])
+    # cut_maintypeNum = np.array([np.where(letterSpt == ii)[0][0] for ii in cut_maintype])
+    logP[cut_index] = logP[cut_index] + np.log10(2)  # P * 2
+
+    cut_index = (skew > 0.4) & (logP > -1.0) & (logP < 0.0)
+    # cut_spec_type = specType[cut_index]
+    # cut_maintype = np.array([ii[0] for ii in cut_spec_type])
+    # cut_maintypeNum = np.array([np.where(letterSpt == ii)[0][0] for ii in cut_maintype])
+    logP[cut_index] = logP[cut_index] + np.log10(2)  # P * 2
+
+    cut_index = (skew < -0.2) & (logP < -0.75)
+    # cut_spec_type = specType[cut_index]
+    # cut_maintype = np.array([ii[0] for ii in cut_spec_type])
+    # cut_maintypeNum = np.array([np.where(letterSpt == ii)[0][0] for ii in cut_maintype])
+    logP[cut_index] = logP[cut_index] - np.log10(2)  # P * 0.5
+
+    return logP, logA, skew, logProb
 
 
 def eqw(temp_lam, temp_flux_scaled, wavelength, flux):
@@ -787,23 +875,29 @@ class TDSSprop:
         from astropy import coordinates as coords
         from astropy.table import Table
         self.nbins = nbins
-        TDSS_prop = Table.read("/Users/benjaminroulston/Dropbox/Research/TDSS/Variable_Stars/HARD_COPY_ORGINAL_DATA/PROGRAM_SAMPLE/2020-02-24/FINAL_FILES/TDSS_SES+PREV_DR16DR12griLT20_GAIADR2_Drake2014PerVar_CSSID_ZTFIDs_LCpointer_PyHammer.fits")
+        TDSS_prop = Table.read("/Users/benjaminroulston/Dropbox/Research/TDSS/Variable_Stars/HARD_COPY_ORGINAL_DATA/PROGRAM_SAMPLE/2020-06-24/FINAL_FILES/TDSS_SES+PREV_DR16DR12griLT20_GaiaDR2_Drake2014PerVar_CSSID_ZTFIDs_LCpointer_PyHammer.fits")
         self.data = TDSS_prop
         self.TDSS_cssid = TDSS_prop['CSSID'].astype(int)
-        self.gaia_bp_rp = TDSS_prop['bp_rp_GAIADR2']
-        self.gaia_g = TDSS_prop['phot_g_mean_mag_GAIADR2']
-        self.gaia_dist = TDSS_prop['rest_GAIADR2']
-        self.gaia_dist_lo = TDSS_prop['rest_low_GAIADR2']
-        self.gaia_dist_hi = TDSS_prop['rest_high_GAIADR2']
-        self.gaia_parallax = TDSS_prop['parallax_GAIADR2']
-        self.gaia_parallax_error = TDSS_prop['parallax_error_GAIADR2']
-        self.gaia_pmra = TDSS_prop['pmra_GAIADR2']
-        self.gaia_pmra_error = TDSS_prop['pmra_error_GAIADR2']
-        self.gaia_pmdec = TDSS_prop['pmdec_GAIADR2']
-        self.gaia_pmdec_error = TDSS_prop['pmdec_error_GAIADR2']
+        self.gaia_bp_rp = TDSS_prop['bp_rp_GaiaDR2']
+        self.gaia_g = TDSS_prop['phot_g_mean_mag_GaiaDR2']
+        self.gaia_dist = TDSS_prop['rest_GaiaDR2']
+        self.gaia_dist_lo = TDSS_prop['rest_low_GaiaDR2']
+        self.gaia_dist_hi = TDSS_prop['rest_high_GaiaDR2']
+        self.gaia_parallax = TDSS_prop['parallax_GaiaDR2']
+        self.gaia_parallax_error = TDSS_prop['parallax_error_GaiaDR2']
+        self.gaia_pmra = TDSS_prop['pmra_GaiaDR2']
+        self.gaia_pmra_error = TDSS_prop['pmra_error_GaiaDR2']
+        self.gaia_pmdec = TDSS_prop['pmdec_GaiaDR2']
+        self.gaia_pmdec_error = TDSS_prop['pmdec_error_GaiaDR2']
         self.gaia_pmTOT = np.sqrt(self.gaia_pmra**2 + self.gaia_pmdec**2)
         self.gaia_pmTOT_error = np.sqrt((self.gaia_pmra*self.gaia_pmra_error)**2 + (self.gaia_pmdec*self.gaia_pmdec_error)**2) / self.gaia_pmTOT
         self.gaia_Mg = self.gaia_g + 5.0 - 5.0*np.log10(self.gaia_dist)
+        self.gaia_l =  TDSS_prop['l_GaiaDR2']
+        self.gaia_b =  TDSS_prop['b_GaiaDR2']
+        self.gaia_Z =  TDSS_prop['Z_GaiaDR2']
+        self.gaia_U =  TDSS_prop['U_GaiaDR2']
+        self.gaia_V =  TDSS_prop['V_GaiaDR2']
+        self.gaia_W =  TDSS_prop['W_GaiaDR2']
         self.SDSS_g =  TDSS_prop['gmag_SDSSDR12']
         self.SDSS_g_err =  TDSS_prop['e_gmag_SDSSDR12']
         self.SDSS_r =  TDSS_prop['rmag_SDSSDR12']
@@ -857,18 +951,18 @@ class latestFullVartoolsRun:
         self.latestFullVartoolsRun_filename = latestFullVartoolsRun_filename
         self.nbins = nbins
         self.latestFullVartoolsRun = pd.read_csv(self.latestFullVartoolsRun_filename)
-        self.dataFrame_all_Index = np.where(self.latestFullVartoolsRun[' dec'].values == 0.0)[0][0]
-        self.lc_id = self.latestFullVartoolsRun[' lc_id'].values[:self.dataFrame_all_Index]
-        self.all_Per_ls = self.latestFullVartoolsRun[' Per_ls'].values[:self.dataFrame_all_Index]
-        self.all_logProb_ls = self.latestFullVartoolsRun[' logProb_ls'].values[:self.dataFrame_all_Index]
-        self.all_Amp_ls = self.latestFullVartoolsRun[' Amp_ls'].values[:self.dataFrame_all_Index]
-        self.all_a95 = self.latestFullVartoolsRun[' a95'].values[:self.dataFrame_all_Index]
-        self.all_ChiSq = self.latestFullVartoolsRun[' Chi2'].values[:self.dataFrame_all_Index]
-        self.all_skewness = self.latestFullVartoolsRun[' lc_skew'].values[:self.dataFrame_all_Index]
-        self.Mt = self.latestFullVartoolsRun[' Mt'].values[:self.dataFrame_all_Index]
-        self.times_is_alias = self.latestFullVartoolsRun[' isAlias'].values[:self.dataFrame_all_Index]
-        self.where_periodic = np.where(self.all_logProb_ls <= -10.0)[0]
-        self.where_not_periodic = np.where(self.all_logProb_ls > -10.0)[0]
+        self.dataFrame_all_Index = np.where(self.latestFullVartoolsRun['ZTF_r_lc_id'].values != 0.0)[0]
+        self.lc_id = self.latestFullVartoolsRun['ZTF_r_lc_id'].values[self.dataFrame_all_Index]
+        self.all_Per_ls = self.latestFullVartoolsRun['ZTF_r_P'].values[self.dataFrame_all_Index]
+        self.all_logProb_ls = self.latestFullVartoolsRun['ZTF_r_logProb'].values[self.dataFrame_all_Index]
+        self.all_Amp_ls = self.latestFullVartoolsRun['ZTF_r_Amp'].values[self.dataFrame_all_Index]
+        self.all_a95 = self.latestFullVartoolsRun['ZTF_r_a95'].values[self.dataFrame_all_Index]
+        self.all_ChiSq = self.latestFullVartoolsRun['ZTF_r_Chi2'].values[self.dataFrame_all_Index]
+        self.all_skewness = self.latestFullVartoolsRun['ZTF_r_lc_skew'].values[self.dataFrame_all_Index]
+        self.Mt = self.latestFullVartoolsRun['ZTF_r_Mt'].values[self.dataFrame_all_Index]
+        self.times_is_alias = self.latestFullVartoolsRun['ZTF_r_isAlias'].values[self.dataFrame_all_Index]
+        self.where_periodic = np.where(self.all_logProb_ls <= -15.0)[0]
+        self.where_not_periodic = np.where(self.all_logProb_ls > -15.0)[0]
         self.log_all_ChiSq = np.log(self.all_ChiSq[self.where_not_periodic])
         self.all_a95_nonan = self.all_a95[self.where_not_periodic]
         self.log_all_ChiSq = self.log_all_ChiSq[~np.isnan(self.log_all_ChiSq)]
