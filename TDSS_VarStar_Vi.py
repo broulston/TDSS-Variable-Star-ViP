@@ -1,8 +1,8 @@
 # %load_ext autoreload
 # %autoreload 2
 
-# import matplotlib
-# matplotlib.use('TkAGG')
+import matplotlib
+matplotlib.use('TkAGG')
 
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker

@@ -11,6 +11,7 @@ import numpy as np
 import numpy.core.defchararray as np_f
 import pandas as pd
 import scipy as sci
+from scipy.stats import kde
 from scipy.stats import f
 from subprocess import *
 import os
@@ -347,29 +348,16 @@ def plt_lc(lc_data, all_period_properties, ax, title="", plt_resid=False, phaseb
             ax.invert_yaxis()
 
 
-def plot_SDSSspec(ROW, TDSSprop, prop_id, spec_dir, plt_ax): 
+def plot_SDSSspec(ROW, TDSSprop, prop_id, spec_dir, plt_ax):
     line_list_dir = "/Users/benjaminroulston/Dropbox/Research/TDSS/General/SpecLineLists/"
-    spectral_type_prop_dir = "/Users/benjaminroulston/Dropbox/Research/TDSS/General/SpecTypeProp/"
+    # spectral_type_prop_dir = "/Users/benjaminroulston/Dropbox/Research/TDSS/General/SpecTypeProp/"
 
-    box_size = 10
-    def smooth(y, box_pts):
-        box = np.ones(box_pts)/box_pts
-        y_smooth = np.convolve(y, box, mode='valid')
-        return y_smooth
-
-    def splitSpecType(s):
-        # head = s.rstrip('0123456789')
-        # tail = s[len(head):]
-        if 'dC' in s:
-            head = 'dC'
-            tail = s[-1]
-        else:
-            head, tail, _ = re.split('(\d.*)', s)
-        return head, tail
+    spec_box_size = 10
+    temp_box_size = 20
 
     xmin = 3800
     xmax = 10000
-    sig_range = 3.0
+    # sig_range = 3.0
     major_tick_space = 1000
     minor_tick_space = 100
 
@@ -378,25 +366,25 @@ def plot_SDSSspec(ROW, TDSSprop, prop_id, spec_dir, plt_ax):
     plate_string = '{:0>4}'.format(ROW['plate'])
     mjd_string = '{:0>5}'.format(ROW['mjd'])
     fiberid_string = '{:0>4}'.format(ROW['fiber'])
-    short_spec_filename = "spec-"+plate_string+"-"+mjd_string+"-"+fiberid_string+".fits"
+    short_spec_filename = f"spec-{plate_string}-{mjd_string}-{fiberid_string}.fits"
     try:
-        file_data = fits.open(spec_dir+short_spec_filename) # cols are wavelength,flux
+        file_data = fits.open(spec_dir + short_spec_filename)  # cols are wavelength,flux
         wavelength = 10.0**file_data[1].data['loglam']
         flux = file_data[1].data['flux']
-        err = np.sqrt(1/file_data[1].data['ivar'])
-    #except IOError:
+        # err = np.sqrt(1 / file_data[1].data['ivar'])
+    # except IOError:
     except:
-        #throw_error[ii] = 1
-        print("Spec plot err: ",ra_string, dec_string, short_spec_filename)
+        # throw_error[ii] = 1
+        print("Spec plot err: ", ra_string, dec_string, short_spec_filename)
 
     flux = removeSdssStitchSpike(wavelength, flux)
 
     specTypeMatch = ROW['PyHammerSpecType'].strip()
-    pyhammer_RV = str(np.round(ROW['PyHammerRV']))#str(pyhammer_RV)
+    pyhammer_RV = str(np.round(ROW['PyHammerRV']))  # str(pyhammer_RV)
 
     if "+" in specTypeMatch:
         template_file_dir = "/Users/benjaminroulston/Dropbox/GitHub/PyHammer/resources/templates_SB2/"
-        tempName = specTypeMatch+".fits"
+        tempName = specTypeMatch + ".fits"
         spectype1, spectype2 = specTypeMatch.replace('+', " ").split()
 
         spectype1 = splitSpecType(spectype1)[0]
@@ -404,44 +392,44 @@ def plot_SDSSspec(ROW, TDSSprop, prop_id, spec_dir, plt_ax):
     else:
         specTypeMatch_code, specTypeMatch_subType_code = splitSpecType(specTypeMatch)
 
-        spec_code_alph = np.array(['O','B','A','F','G','K','M','L','dC','DA'])
-        spec_code_num = np.arange(10)
+        spec_code_alph = np.array(['O', 'B', 'A', 'F', 'G', 'K', 'M', 'L', 'dC', 'DA'])
+        # spec_code_num = np.arange(10)
 
         this_spec_num_code = np.where(spec_code_alph == specTypeMatch_code)[0][0]
 
         template_file_dir = "/Users/benjaminroulston/Dropbox/GitHub/PyHammer/resources/templates/"
         if this_spec_num_code == 0:
             tempName = 'O' + str(specTypeMatch_subType_code) + '.fits'
-        #Spectral type B
-        elif this_spec_num_code == 1: 
+        # Spectral type B
+        elif this_spec_num_code == 1:
             tempName = 'B' + str(specTypeMatch_subType_code) + '.fits'
-        #Spectral types A0, A1, A2 (where there are no metallicity changes)
+        # Spectral types A0, A1, A2 (where there are no metallicity changes)
         elif this_spec_num_code == 2 and float(specTypeMatch_subType_code) < 3:
             tempName = 'A' + str(specTypeMatch_subType_code) + '.fits'
-        #Spectral type A3 through A9
-        elif this_spec_num_code == 2 and float(specTypeMatch_subType_code) > 2: 
+        # Spectral type A3 through A9
+        elif this_spec_num_code == 2 and float(specTypeMatch_subType_code) > 2:
             tempName = 'A' + str(specTypeMatch_subType_code) + '_-1.0_Dwarf.fits'
-        #Spectral type F
-        elif this_spec_num_code == 3: 
+        # Spectral type F
+        elif this_spec_num_code == 3:
             tempName = 'F' + str(specTypeMatch_subType_code) + '_-1.0_Dwarf.fits'
-        #Spectral type G
-        elif this_spec_num_code == 4: 
+        # Spectral type G
+        elif this_spec_num_code == 4:
             tempName = 'G' + str(specTypeMatch_subType_code) + '_+0.0_Dwarf.fits'
-        #Spectral type K 
-        elif this_spec_num_code == 5: 
+        # Spectral type K
+        elif this_spec_num_code == 5:
             tempName = 'K' + str(specTypeMatch_subType_code) + '_+0.0_Dwarf.fits'
-        #Spectral type M (0 through 8) 
-        elif this_spec_num_code == 6 and float(specTypeMatch_subType_code) < 9: 
+        # Spectral type M (0 through 8)
+        elif this_spec_num_code == 6 and float(specTypeMatch_subType_code) < 9:
             tempName = 'M' + str(specTypeMatch_subType_code) + '_+0.0_Dwarf.fits'
-        #Spectral type M9 (no metallicity)
-        elif this_spec_num_code == 6 and float(specTypeMatch_subType_code) == 9: 
+        # Spectral type M9 (no metallicity)
+        elif this_spec_num_code == 6 and float(specTypeMatch_subType_code) == 9:
             tempName = 'M' + str(specTypeMatch_subType_code) + '.fits'
-        #Spectral type L
-        elif this_spec_num_code == 7: 
+        # Spectral type L
+        elif this_spec_num_code == 7:
             tempName = 'L' + str(specTypeMatch_subType_code) + '.fits'
-        elif this_spec_num_code == 8: 
+        elif this_spec_num_code == 8:
             tempName = 'dC' + str(specTypeMatch_subType_code) + '.fits'
-        elif this_spec_num_code == 9: 
+        elif this_spec_num_code == 9:
             tempName = 'DA' + str(specTypeMatch_subType_code) + '.fits'
     # Open the template
     temp = fits.open(template_file_dir + tempName)
@@ -453,45 +441,45 @@ def plot_SDSSspec(ROW, TDSSprop, prop_id, spec_dir, plt_ax):
         line_lis_all1 = np.genfromtxt(line_list_dir + "spec_types/" + spectype1 + "star_lines.list", comments='#', dtype="S")
         line_lis_all2 = np.genfromtxt(line_list_dir + "spec_types/" + spectype2 + "star_lines.list", comments='#', dtype="S")
 
-        lineList_wavelength1 = np.float64(line_lis_all1[:,0])
-        lineList_wavelength2 = np.float64(line_lis_all2[:,0])
+        lineList_wavelength1 = np.float64(line_lis_all1[:, 0])
+        lineList_wavelength2 = np.float64(line_lis_all2[:, 0])
         lineList_wavelength = np.hstack((lineList_wavelength1, lineList_wavelength2))
-        lineList_labels = np.empty(lineList_wavelength.size,dtype="U60")
+        lineList_labels = np.empty(lineList_wavelength.size, dtype="U60")
         for ii in range(lineList_wavelength1.size):
-            lineList_labels[ii] = line_lis_all1[ii,1].decode(encoding="utf-8", errors="strict")
+            lineList_labels[ii] = line_lis_all1[ii, 1].decode(encoding="utf-8", errors="strict")
         for ii in range(lineList_wavelength2.size):
             jj = ii + lineList_wavelength1.size
-            lineList_labels[jj] = line_lis_all2[ii,1].decode(encoding="utf-8", errors="strict")
+            lineList_labels[jj] = line_lis_all2[ii, 1].decode(encoding="utf-8", errors="strict")
     else:
-        #line_lis_all = np.genfromtxt("aaaLineList_2.list",comments='#',dtype="S")
-        #line_lis_all = np.genfromtxt(line_list_dir+"H_lines.list",comments='#',dtype="S")
-        #line_lis_all = np.genfromtxt(line_list_dir+"spec_types/"+matched_spec_type+"star_lines.list",comments='#',dtype="S")
-        line_lis_all = np.genfromtxt(line_list_dir+"spec_types/"+specTypeMatch_code+"star_lines.list",comments='#',dtype="S")
+        # line_lis_all = np.genfromtxt("aaaLineList_2.list",comments='#',dtype="S")
+        # line_lis_all = np.genfromtxt(line_list_dir+"H_lines.list",comments='#',dtype="S")
+        # line_lis_all = np.genfromtxt(line_list_dir+"spec_types/"+matched_spec_type+"star_lines.list",comments='#',dtype="S")
+        line_lis_all = np.genfromtxt(f"{line_list_dir}spec_types/{specTypeMatch_code}star_lines.list", comments='#', dtype="S")
 
-        lineList_wavelength = np.float64(line_lis_all[:,0])
-        lineList_labels = np.empty(lineList_wavelength.size,dtype="U60")
+        lineList_wavelength = np.float64(line_lis_all[:, 0])
+        lineList_labels = np.empty(lineList_wavelength.size, dtype="U60")
         for ii in range(lineList_wavelength.size):
-            lineList_labels[ii] = line_lis_all[ii,1].decode(encoding="utf-8", errors="strict")
+            lineList_labels[ii] = line_lis_all[ii, 1].decode(encoding="utf-8", errors="strict")
 
-    trim_spectrum_left = 10 #number of pixels to trim from left side
-    smooth_flux = smooth(flux[trim_spectrum_left:],box_size)
-    smooth_wavelength = smooth(wavelength[trim_spectrum_left:],box_size)
+    trim_spectrum_left = 10  # number of pixels to trim from left side
+    smooth_flux = smooth(flux[trim_spectrum_left:], spec_box_size)
+    smooth_wavelength = smooth(wavelength[trim_spectrum_left:], spec_box_size)
 
-    smooth_temp_flux = smooth(temp_flux,box_size)
-    smooth_temp_wavelength = smooth(temp_lam,box_size)
+    smooth_temp_flux = smooth(temp_flux, temp_box_size)
+    smooth_temp_wavelength = smooth(temp_lam, temp_box_size)
 
-    plotted_region = np.where( (smooth_wavelength >= xmin) & (smooth_wavelength <= xmax))[0]
+    plotted_region = np.where((smooth_wavelength >= xmin) & (smooth_wavelength <= xmax))[0]
     ymin = smooth_flux[plotted_region].min()
     ymax = smooth_flux[plotted_region].max()
 
-    lam8000_index =  np.where(np.abs(smooth_wavelength-8000.0) == np.abs(smooth_wavelength-8000.0).min())[0][0]
+    lam8000_index = np.argmin(np.abs(smooth_wavelength - 8000.0))
     current_spec_flux_at_8000 = smooth_flux[lam8000_index]
     temp_flux_scaled = temp_flux * current_spec_flux_at_8000
     smooth_temp_flux = smooth_temp_flux * current_spec_flux_at_8000
 
     this_EqW = eqw(temp_lam, temp_flux_scaled, wavelength, flux)
-    cz = np.round(file_data[2].data['Z_NOQSO'][0]*(const.c.value/1000), 2)
-    cz_err = np.round(file_data[2].data['Z_ERR_NOQSO'][0]*(const.c.value/1000), 2)
+    cz = np.round(file_data[2].data['Z_NOQSO'][0] * (const.c.value / 1000), 2)
+    cz_err = np.round(file_data[2].data['Z_ERR_NOQSO'][0] * (const.c.value / 1000), 2)
     try:
         subclass = file_data[2].data['SUBCLASS_NOQSO'][0].split()[0]
     except:
@@ -519,22 +507,22 @@ def plot_SDSSspec(ROW, TDSSprop, prop_id, spec_dir, plt_ax):
                     +" pc (SNR = "+str(np.round(ROW['parallax_GaiaDR2']/ROW['parallax_error_GaiaDR2'],2))+") $|$ GaiaDR2 PMtot = "+str(np.round(TDSSprop.gaia_pmTOT[prop_id],2))
                     +" mas/yr (SNR = "+str(np.round(TDSSprop.gaia_pmTOT[prop_id]/TDSSprop.gaia_pmTOT_error[prop_id], 2))+")")
 
-    plt_ax.plot(smooth_wavelength,smooth_flux,color='black',linewidth=0.5)
-    #plt_ax.plot(temp_lam, temp_flux_scaled, color='red', alpha=0.3, linewidth=0.5)
+    plt_ax.plot(smooth_wavelength, smooth_flux, color='black', linewidth=0.5)
+    # plt_ax.plot(temp_lam, temp_flux_scaled, color='red', alpha=0.3, linewidth=0.5)
     plt_ax.plot(smooth_temp_wavelength, smooth_temp_flux, color='red', alpha=0.3, linewidth=0.5)
-    plt_ax.set_xlabel("Wavelength [\AA]")#, fontdict=font)
-    plt_ax.set_ylabel("Flux [10$^{-17}$ erg s$^{-1}$ cm$^{-2}$ \AA$^{-1}$]")#, fontdict=font)
+    plt_ax.set_xlabel("Wavelength [\AA]")  # , fontdict=font)
+    plt_ax.set_ylabel("Flux [10$^{-17}$ erg s$^{-1}$ cm$^{-2}$ \AA$^{-1}$]")  # , fontdict=font)
     plt_ax.set_title(plot_title)
-    plt_ax.set_xlim([xmin,xmax])
-    plt_ax.set_ylim([ymin,ymax])
-    #plot.axvspan(5550, 5604, facecolor=ma.colorAlpha_to_rgb('grey', 0.5)[0])#, alpha=0.3)
+    plt_ax.set_xlim([xmin, xmax])
+    plt_ax.set_ylim([ymin, ymax])
+    # plot.axvspan(5550, 5604, facecolor=ma.colorAlpha_to_rgb('grey', 0.5)[0])  # , alpha=0.3)
     plt_ax.xaxis.set_major_locator(ticker.MultipleLocator(major_tick_space))
     plt_ax.xaxis.set_minor_locator(ticker.MultipleLocator(minor_tick_space))
     for ll in range(lineList_wavelength.size):
-        plt_ax.axvline(x=lineList_wavelength[ll],ls='dashed',c='k', alpha=0.1)
-        x_bounds = plt_ax.get_xlim()
-        vlineLabel_value = lineList_wavelength[ll] + 20.0
-       # plt_ax.annotate(s=lineList_labels[ll], xy =(((vlineLabel_value-x_bounds[0])/(x_bounds[1]-x_bounds[0])),0.01),
+        plt_ax.axvline(x=lineList_wavelength[ll], ls='dashed', c='k', alpha=0.1)
+        # x_bounds = plt_ax.get_xlim()
+        # vlineLabel_value = lineList_wavelength[ll] + 20.0
+        # plt_ax.annotate(s=lineList_labels[ll], xy =(((vlineLabel_value-x_bounds[0])/(x_bounds[1]-x_bounds[0])),0.01),
                          #xycoords='axes fraction', verticalalignment='right', horizontalalignment='right bottom' , rotation = 90)
         plt_ax.text(lineList_wavelength[ll]+20.0,plt_ax.get_ylim()[0]+0.50,lineList_labels[ll],rotation=90, color='k', alpha=0.2)
     return this_EqW
@@ -821,6 +809,23 @@ def removeSdssStitchSpike(wavelength, flux):
     return flux
 
 
+def smooth(y, box_pts):
+    box = np.ones(box_pts) / box_pts
+    y_smooth = np.convolve(y, box, mode='valid')
+    return y_smooth
+
+
+def splitSpecType(s):
+    # head = s.rstrip('0123456789')
+    # tail = s[len(head):]
+    if 'dC' in s:
+        head = 'dC'
+        tail = s[-1]
+    else:
+        head, tail, _ = re.split('(\d.*)', s)
+    return head, tail
+
+
 def makeViDirs(Vi_dir="/Users/benjaminroulston/Dropbox/Research/TDSS/Variable_Stars/WORKING_DIRECTORY/Vi/", ZTF_filters=['g', 'r']):
     datestr = check_output(["/bin/date","+%F"])
     datestr = datestr.decode().replace('\n', '')
@@ -855,7 +860,7 @@ def checkViRun(Vi_dir="/Users/benjaminroulston/Dropbox/Research/TDSS/Variable_St
     from pathlib import Path
     datestr = check_output(["/bin/date","+%F"])
     datestr = datestr.decode().replace('\n', '')
-    prop_out_dir = Vi_dir+datestr+"/"
+    prop_out_dir = Vi_dir + datestr + "/"
     my_file = Path(prop_out_dir+"completed_Vi_prop_"+datestr+".fits")
     if my_file.is_file():
         properties = Table.read(prop_out_dir+"completed_Vi_prop_"+datestr+".fits")
@@ -867,6 +872,7 @@ def checkViRun(Vi_dir="/Users/benjaminroulston/Dropbox/Research/TDSS/Variable_St
 
 class TDSSprop:
     Vi_dir = "/Users/benjaminroulston/Dropbox/Research/TDSS/Variable_Stars/WORKING_DIRECTORY/Vi/"
+
     def __init__(self, nbins):
         from scipy.stats import kde
         import numpy as np
@@ -892,18 +898,18 @@ class TDSSprop:
         self.gaia_pmTOT = np.sqrt(self.gaia_pmra**2 + self.gaia_pmdec**2)
         self.gaia_pmTOT_error = np.sqrt((self.gaia_pmra*self.gaia_pmra_error)**2 + (self.gaia_pmdec*self.gaia_pmdec_error)**2) / self.gaia_pmTOT
         self.gaia_Mg = self.gaia_g + 5.0 - 5.0*np.log10(self.gaia_dist)
-        self.gaia_l =  TDSS_prop['l_GaiaDR2']
-        self.gaia_b =  TDSS_prop['b_GaiaDR2']
-        self.gaia_Z =  TDSS_prop['Z_GaiaDR2']
-        self.gaia_U =  TDSS_prop['U_GaiaDR2']
-        self.gaia_V =  TDSS_prop['V_GaiaDR2']
-        self.gaia_W =  TDSS_prop['W_GaiaDR2']
-        self.SDSS_g =  TDSS_prop['gmag_SDSSDR12']
-        self.SDSS_g_err =  TDSS_prop['e_gmag_SDSSDR12']
-        self.SDSS_r =  TDSS_prop['rmag_SDSSDR12']
-        self.SDSS_r_err =  TDSS_prop['e_rmag_SDSSDR12']
-        self.SDSS_i =  TDSS_prop['imag_SDSSDR12']
-        self.SDSS_i_err =  TDSS_prop['e_imag_SDSSDR12']
+        self.gaia_l = TDSS_prop['l_GaiaDR2']
+        self.gaia_b = TDSS_prop['b_GaiaDR2']
+        self.gaia_Z = TDSS_prop['Z_GaiaDR2']
+        self.gaia_U = TDSS_prop['U_GaiaDR2']
+        self.gaia_V = TDSS_prop['V_GaiaDR2']
+        self.gaia_W = TDSS_prop['W_GaiaDR2']
+        self.SDSS_g = TDSS_prop['gmag_SDSSDR12']
+        self.SDSS_g_err = TDSS_prop['e_gmag_SDSSDR12']
+        self.SDSS_r = TDSS_prop['rmag_SDSSDR12']
+        self.SDSS_r_err = TDSS_prop['e_rmag_SDSSDR12']
+        self.SDSS_i = TDSS_prop['imag_SDSSDR12']
+        self.SDSS_i_err = TDSS_prop['e_imag_SDSSDR12']
         self.SDSS_gmr = self.SDSS_g - self.SDSS_r
         self.SDSS_gmi = self.SDSS_g - self.SDSS_i
         self.SDSS_M_r = self.SDSS_r + 5.0 - 5.0*np.log10(self.gaia_dist)
@@ -930,7 +936,7 @@ class TDSSprop:
         self.TDSS_fibderid = TDSS_prop['fiber'].astype(int)
         self.TDSS_coords = coords.SkyCoord(ra=self.TDSS_ra*u.degree, dec=self.TDSS_dec*u.degree, frame='icrs')       
         self.Drake_index = np.where(TDSS_prop['Drake_Per'])[0]
-        #self.Drake_num_to_vartype = np.genfromtxt("sup_data/"+"darke_var_types.txt", dtype="U", comments="#", delimiter=",")
+        # self.Drake_num_to_vartype = np.genfromtxt("sup_data/"+"darke_var_types.txt", dtype="U", comments="#", delimiter=",")
         self.Drake_num_to_vartype = Table.read("sup_data/"+"darke_var_types.txt", format='ascii.commented_header')
         self.D_Per = TDSS_prop['Drake_Per']
         self.D_Amp = TDSS_prop['Drake_Vamp']
@@ -945,9 +951,6 @@ class TDSSprop:
 
 class latestFullVartoolsRun:
     def __init__(self, latestFullVartoolsRun_filename, nbins=50):
-        import numpy as np
-        import pandas as pd
-        from scipy.stats import kde
         self.latestFullVartoolsRun_filename = latestFullVartoolsRun_filename
         self.nbins = nbins
         self.latestFullVartoolsRun = pd.read_csv(self.latestFullVartoolsRun_filename)
