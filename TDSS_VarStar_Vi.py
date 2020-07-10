@@ -34,6 +34,8 @@ from astropy import coordinates as coords
 import importlib
 import tqdm
 
+import time
+
 import warnings
 
 import ResearchTools.LCtools as LCtools
@@ -86,22 +88,30 @@ else:
     properties['ra'] = TDSSprop.data['ra']
     properties['dec'] = TDSSprop.data['dec']
 
+periodic_filenames = []
 # ***********************************************
 importlib.reload(vi)
 importlib.reload(LCtools)
 plt.ioff()
-
+# ***********************************************
+# ***********************************************
+# ***********************************************
 # runVartools = True
+# run_onlyPyHammerChanged = True
 runLS = True
 plotLCerr = True
 plt_resid = False
 plt_subLC = True
 plot_rejected = True
-checkalias = False
-# run_onlyPyHammerChanged = True
+checkalias = True
 logProblimit = -10
-periodic_filenames = []
 Nepochs_required = 10
+minP = 0.1
+maxP = 100.0
+nterms_LS = 1  # Currently astropy only allows calculation of the False Alarm probability (FAP) for neterms=1, so this can't be changed.
+# ***********************************************
+# ***********************************************
+# ***********************************************
 with warnings.catch_warnings():
     warnings.simplefilter("ignore", category=RuntimeWarning)
     for prop_id, ROW in enumerate(tqdm.tqdm(TDSSprop.data)):
@@ -121,8 +131,9 @@ with warnings.catch_warnings():
         #     properties[prop_id]['ViCompleted'] = 1
         #     continue
         #
-        # prop_id = 183
+        # prop_id = 12
         # ROW = TDSSprop.data[prop_id]
+        start_time = time.time()
 
         object_ra = ROW['ra']
         object_dec = ROW['dec']
@@ -139,13 +150,15 @@ with warnings.catch_warnings():
         fig = plt.figure(figsize=(13, 9), constrained_layout=True)
         gs = GridSpec(2, 7, figure=fig, height_ratios=[1, 1], width_ratios=[1, 1, 1, 1, 0.4, 1, 1])  # , hspace=0.3, wspace=0.5)
         ax1 = fig.add_subplot(gs[0, :2])  # LC
-        ax2 = fig.add_subplot(gs[0, 2:4])  # SDSS DR12 Image
-        ax3 = fig.add_subplot(gs[0, 5:])  # CMD?
+        ax2 = fig.add_subplot(gs[0, 2:4])  # Chi2 vs Amp plots OR Palerversa+2013 plot
+        ax3 = fig.add_subplot(gs[0, 5:])  # CMD
         ax4 = fig.add_subplot(gs[1, :])  # spectra with lines
         fig.suptitle(f'RA= {ra_string} DEC= {dec_string}', fontsize=16)
 
-        CSS_prop, ZTF_g_prop, ZTF_r_prop, best_LC = vi.LC_analysis(ROW, TDSSprop, CSS_LC_dir, ZTF_g_LCs, ZTF_r_LCs, ax1, CSS_LC_plot_dir, ZTF_LC_plot_dir, Nepochs_required, log10FAP=logProblimit, checkalias=checkalias, plt_subLC=plt_subLC, plot_rejected=plot_rejected)
+        begin_first_plot = time.time()
+        CSS_prop, ZTF_g_prop, ZTF_r_prop, best_LC = vi.LC_analysis(ROW, TDSSprop, CSS_LC_dir, ZTF_g_LCs, ZTF_r_LCs, ax1, CSS_LC_plot_dir, ZTF_LC_plot_dir, Nepochs_required, minP=minP, maxP=maxP, nterms=nterms_LS, log10FAP=logProblimit, checkalias=checkalias, plt_subLC=plt_subLC, plot_rejected=plot_rejected)
         all_LC_props = [CSS_prop, ZTF_g_prop, ZTF_r_prop]
+        end_first_plot = time.time()
 
         if best_LC == 'CSS':
             if (CSS_prop['logProb'] <= logProblimit):
@@ -162,17 +175,36 @@ with warnings.catch_warnings():
                 for key, value in LCprop.items():
                     properties[prop_id][prop_col_names_prefix[LC_ii] + key] = value
 
+        begin_second_plot = time.time()
         this_EqW = vi.plot_SDSSspec(ROW, TDSSprop, prop_id, spec_dir, ax4)
         properties[prop_id]['EqW'] = this_EqW
+        end_second_plot = time.time()
 
+        begin_third_plot = time.time()
         vi.plot_middle(all_LC_props, best_LC, latestFullVartoolsRun, ax2)
+        end_third_plot = time.time()
 
+        begin_fourth_plot = time.time()
         vi.plot_CMD(TDSSprop, prop_id, ax3)
+        end_fourth_plot = time.time()
 
+        begin_save_plot = time.time()
         plt.savefig(f"{Vi_plots_dir}{ra_string}{dec_string}_Vi.pdf", dpi=600, bbox_inches='tight')
+        end_save_plot = time.time()
         # plt.show()
         plt.clf()
         plt.close()
+
+        print(start_time - begin_first_plot,
+              begin_first_plot - end_first_plot,
+              end_first_plot - begin_second_plot,
+              begin_second_plot - end_second_plot,
+              end_second_plot - begin_third_plot,
+              begin_third_plot - end_third_plot,
+              end_third_plot - begin_fourth_plot,
+              begin_fourth_plot - end_fourth_plot,
+              end_fourth_plot - begin_save_plot,
+              begin_save_plot - end_save_plot)
 
         properties[prop_id]['ViCompleted'] = 1
         if (prop_id % 100) == 0:
