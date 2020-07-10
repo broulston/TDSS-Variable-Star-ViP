@@ -6,7 +6,7 @@
 5 RRc
 6 RRd
 7 Blazhko
-8 RS$\$CVn
+8 RS*\*CVn
 9 ACEP
 10 Cep-II
 11 HADS
