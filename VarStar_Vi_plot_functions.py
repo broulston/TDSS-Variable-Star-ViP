@@ -34,7 +34,7 @@ def low_order_poly(mag, a, b, c, d, e, f_, g):
     return a + b * mag + c * mag**2 + d * mag**3 + e * mag**4 + f_ * mag**5 + g * mag**5
 
 
-def LC_analysis(ROW, TDSSprop, CSS_LC_dir, ZTF_g_LCs, ZTF_r_LCs, ax, CSS_LC_plot_dir, ZTF_LC_plot_dir, Nepochs_required, log10FAP=-5, checkalias=False, plt_subLC=False, plot_rejected=False):
+def LC_analysis(ROW, TDSSprop, CSS_LC_dir, ZTF_g_LCs, ZTF_r_LCs, ax, CSS_LC_plot_dir, ZTF_LC_plot_dir, Nepochs_required, minP=0.1, maxP=100.0, nterms=1, log10FAP=-5, checkalias=False, plt_subLC=False, plot_rejected=False):
     is_CSS = ROW['CSSLC']
     is_ZTF_g = np.isfinite(ROW['ZTF_g_GroupID'])
     is_ZTF_r = np.isfinite(ROW['ZTF_r_GroupID'])
@@ -55,7 +55,7 @@ def LC_analysis(ROW, TDSSprop, CSS_LC_dir, ZTF_g_LCs, ZTF_r_LCs, ax, CSS_LC_plot
                 CSS_lc_data['magerr'][bad_err_index] = pred_magerr[bad_err_index]
 
                 CSS_flc_data, LC_stat_properties = LCtools.process_LC(CSS_lc_data.copy(), fltRange=5.0)
-                LC_period_properties, all_CSS_period_properties = LCtools.perdiodSearch(CSS_flc_data, minP=0.1, maxP=100.0, log10FAP=log10FAP, checkalias=checkalias)
+                LC_period_properties, all_CSS_period_properties = LCtools.perdiodSearch(CSS_flc_data, minP=minP, maxP=maxP, log10FAP=log10FAP, checkalias=checkalias, nterms=nterms)
                 all_CSS_period_properties = {**LC_stat_properties, **all_CSS_period_properties}
                 CSS_prop = {**LC_stat_properties, **LC_period_properties}
                 CSS_prop['lc_id'] = ROW['CSSID']
@@ -84,7 +84,7 @@ def LC_analysis(ROW, TDSSprop, CSS_LC_dir, ZTF_g_LCs, ZTF_r_LCs, ax, CSS_LC_plot
         ZTF_g_lc_data = ZTF_g_LCs[(ZTF_g_LCs['GroupID'] == ROW['ZTF_g_GroupID'])]['mjd', 'mag', 'magerr']
         if len(ZTF_g_lc_data)>=Nepochs_required:
             ZTF_gflc_data, LC_stat_properties = LCtools.process_LC(ZTF_g_lc_data.copy(), fltRange=5.0)
-            LC_period_properties, all_ZTFg_period_properties = LCtools.perdiodSearch(ZTF_gflc_data, minP=0.1, maxP=100.0, log10FAP=log10FAP, checkalias=checkalias)
+            LC_period_properties, all_ZTFg_period_properties = LCtools.perdiodSearch(ZTF_gflc_data, minP=minP, maxP=maxP, log10FAP=log10FAP, checkalias=checkalias, nterms=nterms)
             all_ZTFg_period_properties = {**LC_stat_properties, **all_ZTFg_period_properties}
             ZTF_g_prop = {**LC_stat_properties, **LC_period_properties}
             ZTF_g_prop['lc_id'] =  ROW['ZTF_g_GroupID']
@@ -109,7 +109,7 @@ def LC_analysis(ROW, TDSSprop, CSS_LC_dir, ZTF_g_LCs, ZTF_r_LCs, ax, CSS_LC_plot
         ZTF_r_lc_data = ZTF_r_LCs[(ZTF_r_LCs['GroupID'] == ROW['ZTF_r_GroupID'])]['mjd', 'mag', 'magerr']
         if len(ZTF_r_lc_data)>=Nepochs_required:
             ZTF_rflc_data, LC_stat_properties = LCtools.process_LC(ZTF_r_lc_data.copy(), fltRange=5.0)
-            LC_period_properties, all_ZTFr_period_properties = LCtools.perdiodSearch(ZTF_rflc_data, minP=0.1, maxP=100.0, log10FAP=log10FAP, checkalias=checkalias)
+            LC_period_properties, all_ZTFr_period_properties = LCtools.perdiodSearch(ZTF_rflc_data, minP=minP, maxP=maxP, log10FAP=log10FAP, checkalias=checkalias, nterms=nterms)
             all_ZTFr_period_properties = {**LC_stat_properties, **all_ZTFr_period_properties}
             ZTF_r_prop = {**LC_stat_properties, **LC_period_properties}
             ZTF_r_prop['lc_id'] =  ROW['ZTF_r_GroupID']
@@ -133,7 +133,7 @@ def LC_analysis(ROW, TDSSprop, CSS_LC_dir, ZTF_g_LCs, ZTF_r_LCs, ax, CSS_LC_plot
     best_LC = find_best_LC(all_CSS_period_properties, all_ZTFg_period_properties, all_ZTFr_period_properties)
 
     if ROW['isDrake']:
-        title_line2 = "\n Drake: P={!s} $|$ Amp={!s} $|$ VarType={!s}".format(ROW['Drake_Per'], ROW['Drake_Vamp'], TDSSprop.Drake_num_to_vartype[(ROW['Drake_Cl']-1).astype(int)]['Var_Type'].strip())
+        title_line2 = "\n Drake: P={!s} $|$ Amp={!s} $|$ VarType={!s}".format(ROW['Drake_Per'], ROW['Drake_Vamp'], TDSSprop.Drake_num_to_vartype[(ROW['Drake_Cl']-1).astype(int)]['Var_Type'].strip().replace("*\*", " "))
     else:
         title_line2 = ""
 
