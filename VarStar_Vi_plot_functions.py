@@ -17,6 +17,7 @@ from subprocess import *
 import os
 import glob
 import re
+import tqdm
 
 from astropy.table import Table
 from astropy import constants as const
@@ -34,7 +35,7 @@ def low_order_poly(mag, a, b, c, d, e, f_, g):
     return a + b * mag + c * mag**2 + d * mag**3 + e * mag**4 + f_ * mag**5 + g * mag**5
 
 
-def LC_analysis(ROW, TDSSprop, CSS_LC_dir, ZTF_g_LCs, ZTF_r_LCs, ax, CSS_LC_plot_dir, ZTF_LC_plot_dir, Nepochs_required, minP=0.1, maxP=100.0, nterms=1, log10FAP=-5, checkalias=False, plt_subLC=False, plot_rejected=False):
+def LC_analysis(ROW, TDSSprop, CSS_LC_dir, ZTF_g_LCs, ZTF_r_LCs, ax, CSS_LC_plot_dir, ZTF_LC_plot_dir, Nepochs_required, minP=0.1, maxP=100.0, log10FAP=-10, checkHarmonic=False, plt_subLC=False, plot_rejected=False):
     is_CSS = ROW['CSSLC']
     is_ZTF_g = np.isfinite(ROW['ZTF_g_GroupID'])
     is_ZTF_r = np.isfinite(ROW['ZTF_r_GroupID'])
@@ -55,7 +56,7 @@ def LC_analysis(ROW, TDSSprop, CSS_LC_dir, ZTF_g_LCs, ZTF_r_LCs, ax, CSS_LC_plot
                 CSS_lc_data['magerr'][bad_err_index] = pred_magerr[bad_err_index]
 
                 CSS_flc_data, LC_stat_properties = LCtools.process_LC(CSS_lc_data.copy(), fltRange=5.0)
-                LC_period_properties, all_CSS_period_properties = LCtools.perdiodSearch(CSS_flc_data, minP=minP, maxP=maxP, log10FAP=log10FAP, checkalias=checkalias, nterms=nterms)
+                LC_period_properties, all_CSS_period_properties = LCtools.perdiodSearch(CSS_flc_data, minP=minP, maxP=maxP, log10FAP=log10FAP, checkHarmonic=checkHarmonic)
                 all_CSS_period_properties = {**LC_stat_properties, **all_CSS_period_properties}
                 CSS_prop = {**LC_stat_properties, **LC_period_properties}
                 CSS_prop['lc_id'] = ROW['CSSID']
@@ -63,11 +64,24 @@ def LC_analysis(ROW, TDSSprop, CSS_LC_dir, ZTF_g_LCs, ZTF_r_LCs, ax, CSS_LC_plot
                 # CSS_flc_data = [CSS_flc_data['mjd'].data, CSS_flc_data['mag'].data, CSS_flc_data['magerr'].data]
 
                 if plt_subLC:
-                    fig = plt.figure()
-                    title = "RA: {!s} DEC: {!s} $|$ P = {!s}d $|$ {!s}w \n log10(FAP) = {!s} $|$ {!s} mag = {!s} $|$ Amp = {!s} $|$ t0 = {!s}".format(ra_string, dec_string, np.round(LC_period_properties['P'], 5), LC_period_properties['time_whittened'], np.round(LC_period_properties['logProb'], 2), "CSS", np.round(ROW['CSSmag'],2), np.round(LC_period_properties['Amp'],3), np.round(all_CSS_period_properties['t0'],5))   
-                    LCtools.plt_lc(CSS_flc_data, all_CSS_period_properties, fig=fig, title=title, plt_resid=True, phasebin=True, bins=25)
-                    # LCtools.plt_lc(CSS_flc_data, all_CSS_period_properties, fig=fig, title=title, plt_resid=True, phasebin=True, bins=25, plot_rejected=plot_rejected)
-                    plt.savefig(CSS_LC_plot_dir+ra_string+dec_string+"_CSS.pdf", dpi=600)
+                    # fig = plt.figure()
+                    # title = "RA: {!s} DEC: {!s} $|$ P = {!s}d $|$ {!s}w \n log10(FAP) = {!s} $|$ {!s} mag = {!s} $|$ Amp = {!s} $|$ t0 = {!s}".format(ra_string, dec_string, np.round(, 5), LC_period_properties['time_whittened'], np.round(LC_period_properties['logProb'], 2), "CSS", np.round(ROW['CSSmag'],2), np.round(LC_period_properties['Amp'],3), np.round(all_CSS_period_properties['t0'],5))   
+                    # LCtools.plt_lc(CSS_flc_data, all_CSS_period_properties, fig=fig, title=title, plt_resid=True, phasebin=True, bins=25)
+                    # # LCtools.plt_lc(CSS_flc_data, all_CSS_period_properties, fig=fig, title=title, plt_resid=True, phasebin=True, bins=25, plot_rejected=plot_rejected)
+                    # plt.savefig(CSS_LC_plot_dir+ra_string+dec_string+"_CSS.pdf", dpi=600)
+                    # plt.clf()
+                    # plt.close()
+
+                    freq_grid = all_CSS_period_properties['frequency']
+                    power = all_CSS_period_properties['power']
+                    logFAP_limit = log10FAP
+                    FAP_power_peak = all_CSS_period_properties['ls'].false_alarm_level(10**logFAP_limit)
+                    df = (1 * u.d)**-1
+                    # title = "RA: {!s} DEC: {!s} $|$ P = {!s}d $|$ $m$ = {!s}".format(ra_string, dec_string, np.round(test_P, 7), np.round(mean_mag, 2))
+                    title = "RA: {!s} DEC: {!s}".format(ra_string, dec_string)
+                    LCtools.plot_LC_analysis(CSS_flc_data, LC_period_properties['P'], freq_grid, power, FAP_power_peak=FAP_power_peak, logFAP_limit=logFAP_limit, df=df, title=title)
+                    plt.savefig(CSS_LC_plot_dir + ra_string + dec_string + "_CSS.pdf", dpi=600)
+                    # plt.show()
                     plt.clf()
                     plt.close()
             else:
@@ -84,7 +98,7 @@ def LC_analysis(ROW, TDSSprop, CSS_LC_dir, ZTF_g_LCs, ZTF_r_LCs, ax, CSS_LC_plot
         ZTF_g_lc_data = ZTF_g_LCs[(ZTF_g_LCs['GroupID'] == ROW['ZTF_g_GroupID'])]['mjd', 'mag', 'magerr']
         if len(ZTF_g_lc_data)>=Nepochs_required:
             ZTF_gflc_data, LC_stat_properties = LCtools.process_LC(ZTF_g_lc_data.copy(), fltRange=5.0)
-            LC_period_properties, all_ZTFg_period_properties = LCtools.perdiodSearch(ZTF_gflc_data, minP=minP, maxP=maxP, log10FAP=log10FAP, checkalias=checkalias, nterms=nterms)
+            LC_period_properties, all_ZTFg_period_properties = LCtools.perdiodSearch(ZTF_gflc_data, minP=minP, maxP=maxP, log10FAP=log10FAP, checkHarmonic=checkHarmonic)
             all_ZTFg_period_properties = {**LC_stat_properties, **all_ZTFg_period_properties}
             ZTF_g_prop = {**LC_stat_properties, **LC_period_properties}
             ZTF_g_prop['lc_id'] =  ROW['ZTF_g_GroupID']
@@ -92,10 +106,23 @@ def LC_analysis(ROW, TDSSprop, CSS_LC_dir, ZTF_g_LCs, ZTF_r_LCs, ax, CSS_LC_plot
             # ZTF_gflc_data = [ZTF_gflc_data['mjd'].data, ZTF_gflc_data['mag'].data, ZTF_gflc_data['magerr'].data]
 
             if plt_subLC:
-                fig = plt.figure()
-                title = "RA: {!s} DEC: {!s} $|$ P = {!s}d $|$ {!s}w \n log10(FAP) = {!s} $|$ {!s} mag = {!s} $|$ Amp = {!s} $|$ t0 = {!s}".format(ra_string, dec_string, np.round(LC_period_properties['P'], 5), LC_period_properties['time_whittened'], np.round(LC_period_properties['logProb'], 2), "ZTF g", np.round(ROW['ZTF_g_mag'],2), np.round(LC_period_properties['Amp'],3), np.round(all_ZTFg_period_properties['t0'],5))   
-                LCtools.plt_lc(ZTF_gflc_data, all_ZTFg_period_properties, fig=fig, title=title, plt_resid=True, phasebin=True, bins=25, plot_rejected=plot_rejected)
+                # fig = plt.figure()
+                # title = "RA: {!s} DEC: {!s} $|$ P = {!s}d $|$ {!s}w \n log10(FAP) = {!s} $|$ {!s} mag = {!s} $|$ Amp = {!s} $|$ t0 = {!s}".format(ra_string, dec_string, np.round(LC_period_properties['P'], 5), LC_period_properties['time_whittened'], np.round(LC_period_properties['logProb'], 2), "ZTF g", np.round(ROW['ZTF_g_mag'],2), np.round(LC_period_properties['Amp'],3), np.round(all_ZTFg_period_properties['t0'],5))   
+                # LCtools.plt_lc(ZTF_gflc_data, all_ZTFg_period_properties, fig=fig, title=title, plt_resid=True, phasebin=True, bins=25, plot_rejected=plot_rejected)
+                # plt.savefig(ZTF_LC_plot_dir+"g/"+ra_string+dec_string+"_ZTFg.pdf", dpi=600)
+                # plt.clf()
+                # plt.close()
+
+                freq_grid = all_ZTFg_period_properties['frequency']
+                power = all_ZTFg_period_properties['power']
+                logFAP_limit = log10FAP
+                FAP_power_peak = all_ZTFg_period_properties['ls'].false_alarm_level(10**logFAP_limit)
+                df = (1 * u.d)**-1
+                # title = "RA: {!s} DEC: {!s} $|$ P = {!s}d $|$ $m$ = {!s}".format(ra_string, dec_string, np.round(test_P, 7), np.round(mean_mag, 2))
+                title = "RA: {!s} DEC: {!s}".format(ra_string, dec_string)
+                LCtools.plot_LC_analysis(ZTF_gflc_data, LC_period_properties['P'], freq_grid, power, FAP_power_peak=FAP_power_peak, logFAP_limit=logFAP_limit, df=df, title=title)
                 plt.savefig(ZTF_LC_plot_dir+"g/"+ra_string+dec_string+"_ZTFg.pdf", dpi=600)
+                # plt.show()
                 plt.clf()
                 plt.close()
         else:
@@ -109,7 +136,7 @@ def LC_analysis(ROW, TDSSprop, CSS_LC_dir, ZTF_g_LCs, ZTF_r_LCs, ax, CSS_LC_plot
         ZTF_r_lc_data = ZTF_r_LCs[(ZTF_r_LCs['GroupID'] == ROW['ZTF_r_GroupID'])]['mjd', 'mag', 'magerr']
         if len(ZTF_r_lc_data)>=Nepochs_required:
             ZTF_rflc_data, LC_stat_properties = LCtools.process_LC(ZTF_r_lc_data.copy(), fltRange=5.0)
-            LC_period_properties, all_ZTFr_period_properties = LCtools.perdiodSearch(ZTF_rflc_data, minP=minP, maxP=maxP, log10FAP=log10FAP, checkalias=checkalias, nterms=nterms)
+            LC_period_properties, all_ZTFr_period_properties = LCtools.perdiodSearch(ZTF_rflc_data, minP=minP, maxP=maxP, log10FAP=log10FAP, checkHarmonic=checkHarmonic)
             all_ZTFr_period_properties = {**LC_stat_properties, **all_ZTFr_period_properties}
             ZTF_r_prop = {**LC_stat_properties, **LC_period_properties}
             ZTF_r_prop['lc_id'] =  ROW['ZTF_r_GroupID']
@@ -117,10 +144,23 @@ def LC_analysis(ROW, TDSSprop, CSS_LC_dir, ZTF_g_LCs, ZTF_r_LCs, ax, CSS_LC_plot
             # ZTF_rflc_data = [ZTF_rflc_data['mjd'].data, ZTF_rflc_data['mag'].data, ZTF_rflc_data['magerr'].data]
 
             if plt_subLC:
-                fig = plt.figure()
-                title = "RA: {!s} DEC: {!s} $|$ P = {!s}d $|$ {!s}w \n log10(FAP) = {!s} $|$ {!s} mag = {!s} $|$ Amp = {!s} $|$ t0 = {!s}".format(ra_string, dec_string, np.round(LC_period_properties['P'], 5), LC_period_properties['time_whittened'], np.round(LC_period_properties['logProb'], 2), "ZTF r", np.round(ROW['ZTF_r_mag'],2), np.round(LC_period_properties['Amp'],3), np.round(all_ZTFr_period_properties['t0'],5))   
-                LCtools.plt_lc(ZTF_rflc_data, all_ZTFr_period_properties, fig=fig, title=title, plt_resid=True, phasebin=True, bins=25, plot_rejected=plot_rejected)
+                # fig = plt.figure()
+                # title = "RA: {!s} DEC: {!s} $|$ P = {!s}d $|$ {!s}w \n log10(FAP) = {!s} $|$ {!s} mag = {!s} $|$ Amp = {!s} $|$ t0 = {!s}".format(ra_string, dec_string, np.round(LC_period_properties['P'], 5), LC_period_properties['time_whittened'], np.round(LC_period_properties['logProb'], 2), "ZTF r", np.round(ROW['ZTF_r_mag'],2), np.round(LC_period_properties['Amp'],3), np.round(all_ZTFr_period_properties['t0'],5))   
+                # LCtools.plt_lc(ZTF_rflc_data, all_ZTFr_period_properties, fig=fig, title=title, plt_resid=True, phasebin=True, bins=25, plot_rejected=plot_rejected)
+                # plt.savefig(ZTF_LC_plot_dir+"r/"+ra_string+dec_string+"_ZTFr.pdf", dpi=600)
+                # plt.clf()
+                # plt.close()
+
+                freq_grid = all_ZTFr_period_properties['frequency']
+                power = all_ZTFr_period_properties['power']
+                logFAP_limit = log10FAP
+                FAP_power_peak = all_ZTFr_period_properties['ls'].false_alarm_level(10**logFAP_limit)
+                df = (1 * u.d)**-1
+                # title = "RA: {!s} DEC: {!s} $|$ P = {!s}d $|$ $m$ = {!s}".format(ra_string, dec_string, np.round(test_P, 7), np.round(mean_mag, 2))
+                title = "RA: {!s} DEC: {!s}".format(ra_string, dec_string)
+                LCtools.plot_LC_analysis(ZTF_rflc_data, LC_period_properties['P'], freq_grid, power, FAP_power_peak=FAP_power_peak, logFAP_limit=logFAP_limit, df=df, title=title)
                 plt.savefig(ZTF_LC_plot_dir+"r/"+ra_string+dec_string+"_ZTFr.pdf", dpi=600)
+                # plt.show()
                 plt.clf()
                 plt.close()
         else:
@@ -140,15 +180,15 @@ def LC_analysis(ROW, TDSSprop, CSS_LC_dir, ZTF_g_LCs, ZTF_r_LCs, ax, CSS_LC_plot
     if best_LC=='CSS':
         title_line1 = "CSS ID: {!s} $|$ P={!s} $|$ logProb={!s} \n Amp={!s} $|$ ngood={!s} $|$ nreject={!s} $|$ Con={!s} \n nabove={!s} ({!s}\%) $|$ nbelow={!s} ({!s}\%) $|$ VarStat={!s} \n Tspan100={!s} $|$ Tspan95={!s}\n m={!s} $|$ b={!s} $|$ $\chi^2$={!s} \n a={!s} $|$ b={!s} $|$ c={!s} $|$ $\chi^2$={!s}".format(ROW['CSSID'], str(np.round(all_CSS_period_properties['P'],5))+"w"+str(all_CSS_period_properties['time_whittened']), np.round(all_CSS_period_properties['logProb'],3), np.round(all_CSS_period_properties['Amp'],2), all_CSS_period_properties['ngood'], all_CSS_period_properties['nrejects'], np.round(all_CSS_period_properties['Con'],3), all_CSS_period_properties['nabove'], np.int(np.round((all_CSS_period_properties['nabove']/all_CSS_period_properties['ngood'])*100,2)), all_CSS_period_properties['nbelow'], np.int(np.round((all_CSS_period_properties['nbelow']/all_CSS_period_properties['ngood'])*100,2)), np.round(all_CSS_period_properties['VarStat'],2), np.round(all_CSS_period_properties['Tspan100'],2), np.round(all_CSS_period_properties['Tspan95'],2), np.round(all_CSS_period_properties['m'],4), np.round(all_CSS_period_properties['b_lin'],4), np.round(all_CSS_period_properties['chi2_lin'],2), np.round(all_CSS_period_properties['a'],4), np.round(all_CSS_period_properties['b_quad'],4), np.round(all_CSS_period_properties['c'],4),np.round(all_CSS_period_properties['chi2_quad'],2))
         title_str = title_line1+title_line2
-        plt_lc(CSS_flc_data, all_CSS_period_properties, title=title_str, ax=ax, plot_rejected=plot_rejected)
+        plt_lc(CSS_flc_data, all_CSS_period_properties,  ROW=ROW, title=title_str, ax=ax, plot_rejected=plot_rejected)
     elif best_LC=='ZTF_g':
         title_line1 = "ZTF g GroupID: {!s} $|$ P={!s} $|$ logProb={!s} \n Amp={!s} $|$ ngood={!s} $|$ nreject={!s} $|$ Con={!s} \n nabove={!s} ({!s}\%) $|$ nbelow={!s} ({!s}\%) $|$ VarStat={!s} \n Tspan100={!s} $|$ Tspan95={!s}\n m={!s} $|$ b={!s} $|$ $\chi^2$={!s} \n a={!s} $|$ b={!s} $|$ c={!s} $|$ $\chi^2$={!s}".format(ROW['ZTF_g_GroupID'], str(np.round(all_ZTFg_period_properties['P'],5))+"w"+str(all_ZTFg_period_properties['time_whittened']), np.round(all_ZTFg_period_properties['logProb'],3), np.round(all_ZTFg_period_properties['Amp'],2), all_ZTFg_period_properties['ngood'], all_ZTFg_period_properties['nrejects'], np.round(all_ZTFg_period_properties['Con'],3), all_ZTFg_period_properties['nabove'], np.int(np.round((all_ZTFg_period_properties['nabove']/all_ZTFg_period_properties['ngood'])*100,2)), all_ZTFg_period_properties['nbelow'], np.int(np.round((all_ZTFg_period_properties['nbelow']/all_ZTFg_period_properties['ngood'])*100,2)), np.round(all_ZTFg_period_properties['VarStat'],2), np.round(all_ZTFg_period_properties['Tspan100'],2), np.round(all_ZTFg_period_properties['Tspan95'],2), np.round(all_ZTFg_period_properties['m'],4), np.round(all_ZTFg_period_properties['b_lin'],4), np.round(all_ZTFg_period_properties['chi2_lin'],2), np.round(all_ZTFg_period_properties['a'],4), np.round(all_ZTFg_period_properties['b_quad'],4), np.round(all_ZTFg_period_properties['c'],4),np.round(all_ZTFg_period_properties['chi2_quad'],2))
         title_str = title_line1+title_line2
-        plt_lc(ZTF_gflc_data, all_ZTFg_period_properties, title=title_str, ax=ax, plot_rejected=plot_rejected)
+        plt_lc(ZTF_gflc_data, all_ZTFg_period_properties,  ROW=ROW, title=title_str, ax=ax, plot_rejected=plot_rejected)
     elif best_LC=='ZTF_r':
         title_line1 = "ZTF r GroupID: {!s} $|$ P={!s} $|$ logProb={!s} \n Amp={!s} $|$ ngood={!s} $|$ nreject={!s} $|$ Con={!s} \n nabove={!s} ({!s}\%) $|$ nbelow={!s} ({!s}\%) $|$ VarStat={!s} \n Tspan100={!s} $|$ Tspan95={!s}\n m={!s} $|$ b={!s} $|$ $\chi^2$={!s} \n a={!s} $|$ b={!s} $|$ c={!s} $|$ $\chi^2$={!s}".format(ROW['ZTF_r_GroupID'], str(np.round(all_ZTFr_period_properties['P'],5))+"w"+str(all_ZTFr_period_properties['time_whittened']), np.round(all_ZTFr_period_properties['logProb'],3), np.round(all_ZTFr_period_properties['Amp'],2), all_ZTFr_period_properties['ngood'], all_ZTFr_period_properties['nrejects'], np.round(all_ZTFr_period_properties['Con'],3), all_ZTFr_period_properties['nabove'], np.int(np.round((all_ZTFr_period_properties['nabove']/all_ZTFr_period_properties['ngood'])*100,2)), all_ZTFr_period_properties['nbelow'], np.int(np.round((all_ZTFr_period_properties['nbelow']/all_ZTFr_period_properties['ngood'])*100,2)), np.round(all_ZTFr_period_properties['VarStat'],2), np.round(all_ZTFr_period_properties['Tspan100'],2), np.round(all_ZTFr_period_properties['Tspan95'],2), np.round(all_ZTFr_period_properties['m'],4), np.round(all_ZTFr_period_properties['b_lin'],4), np.round(all_ZTFr_period_properties['chi2_lin'],2), np.round(all_ZTFr_period_properties['a'],4), np.round(all_ZTFr_period_properties['b_quad'],4), np.round(all_ZTFr_period_properties['c'],4),np.round(all_ZTFr_period_properties['chi2_quad'],2))
         title_str = title_line1+title_line2
-        plt_lc(ZTF_rflc_data, all_ZTFr_period_properties, title=title_str, ax=ax, plot_rejected=plot_rejected)
+        plt_lc(ZTF_rflc_data, all_ZTFr_period_properties, ROW=ROW, title=title_str, ax=ax, plot_rejected=plot_rejected)
     else:
         assert best_LC is None, f"ERROR: no best LC found: ({best_LC})"
 
@@ -198,19 +238,24 @@ def find_best_LC(all_CSS_period_properties, all_ZTFg_period_properties, all_ZTFr
         ZTF_r_logProb = None
         ZTF_r_ChiSQ = 0
 
-    if len(best_LC)==1:
+    if len(best_LC) == 1:
         return best_LC[0]
     else:
         ngood = [CSS_ngood, ZTF_g_ngood, ZTF_r_ngood]
         ferrmn = [CSS_ferrmn, ZTF_g_ferrmn, ZTF_r_ferrmn]
         is_periodic = [CSS_is_Periodic, ZTF_g_is_Periodic, ZTF_r_is_Periodic]
-        logProb = [CSS_logProb, ZTF_g_logProb, ZTF_r_logProb ]
+        logProb = [CSS_logProb, ZTF_g_logProb, ZTF_r_logProb]
         ChiSqs = [CSS_ChiSQ, ZTF_g_ChiSQ, ZTF_r_ChiSQ]
 
-        ngood[ngood is None] = 0
-        ferrmn[ferrmn is None] = np.inf
-        is_periodic[is_periodic is None] = False
-        logProb[logProb is None] = np.inf
+        ngood = [ii if ii is not None else 0 for ii in ngood]
+        ferrmn = [ii if ii is not None else np.inf for ii in ferrmn]
+        is_periodic = [ii if ii is not None else False for ii in is_periodic]
+        logProb = [ii if ii is not None else np.inf for ii in logProb]
+
+        # ngood[ngood is None] = 0
+        # ferrmn[ferrmn is None] = np.inf
+        # is_periodic[is_periodic is None] = False
+        # logProb[logProb is None] = np.inf
 
         if np.any(is_periodic):
             if  np.where(is_periodic)[0].size==1:
@@ -225,7 +270,7 @@ def find_best_LC(all_CSS_period_properties, all_ZTFg_period_properties, all_ZTFr
             return base_LCs[np.argmax(ChiSqs)]
 
 
-def plt_lc(lc_data, all_period_properties, ax, title="", plt_resid=False, phasebin=False, bins=25, RV=False, plot_rejected=False):
+def plt_lc(lc_data, all_period_properties, ax, ROW, title="", plt_resid=False, phasebin=False, bins=25, RV=False, plot_rejected=False):
     goodQualIndex = np.where(lc_data['QualFlag']==True)[0]
     badQualIndex = np.where(lc_data['QualFlag']==False)[0]
     mjd = lc_data['mjd'][goodQualIndex].data
@@ -317,8 +362,19 @@ def plt_lc(lc_data, all_period_properties, ax, title="", plt_resid=False, phaseb
             frame2.set_ylabel('Residual')# \n N$_{terms} = 4$')
         else:
             ax.set_xlabel('Phase')
+
+        if (P <= 0.5):
+            SDSS_spec_ExpT = 1.0 / 24.0  # in days
+            spec_mjd = ROW['mjd']
+            spec_in_phase_begin = (((spec_mjd - 0.5 * SDSS_spec_ExpT) - t0) / P) % 1
+            spec_in_phase_end = (((spec_mjd + 0.5 * SDSS_spec_ExpT) - t0) / P) % 1
+
+            ax.axvspan(spec_in_phase_begin, spec_in_phase_end, color='r', alpha=0.2)
+            ax.axvspan(spec_in_phase_begin + 1, spec_in_phase_end + 1, color='r', alpha=0.2)
+        
+        ax.legend(loc='lower center', ncol=3, frameon=False, bbox_to_anchor=(0.5, -0.25))
     else:
-        #fig1 = plt.figure()
+        # fig1 = plt.figure()
         ax.set_title(title)
         if RV:
             ax.errorbar(mjd, mag, err, fmt='.k', ecolor='gray', lw=1, ms=4, capsize=1.5)
@@ -327,18 +383,22 @@ def plt_lc(lc_data, all_period_properties, ax, title="", plt_resid=False, phaseb
             if plot_rejected:
                 ax.errorbar(mjd_bad, mag_bad, err_bad, fmt='.r', ecolor='r', lw=1, ms=4, capsize=1.5, alpha=0.3)
 
+        if (ROW['mjd'] >= mjd.min()) and (ROW['mjd'] <= mjd.max()):
+            ax.axvline(x=ROW['mjd'], lw=0.75, color='r')
+
         fmagmn = np.mean(mag)
         ferrmn = np.mean(err)
         fmag_stdev = np.std(mag)
 
         ax.axhline(fmagmn, color='r', ls='-', lw=2, label='Mean Mag')
-        ax.axhline(fmagmn+3*ferrmn, color='g', ls='-.', lw=2 ,alpha=0.5, label='3X Mag Err')
-        ax.axhline(fmagmn-3*ferrmn, color='g', ls='-.', lw=2 ,alpha=0.5)
-        ax.axhline(fmagmn+3*fmag_stdev, color='b', ls=':', lw=2,alpha=0.5, label='3X Mag StDev')
-        ax.axhline(fmagmn-3*fmag_stdev, color='b', ls=':', lw=2,alpha=0.5)
+        ax.axhline(fmagmn+3*ferrmn, color='g', ls='-.', lw=2, alpha=0.5, label='3X Mag Err')
+        ax.axhline(fmagmn-3*ferrmn, color='g', ls='-.', lw=2, alpha=0.5)
+        ax.axhline(fmagmn+3*fmag_stdev, color='b', ls=':', lw=2, alpha=0.5, label='3X Mag StDev')
+        ax.axhline(fmagmn-3*fmag_stdev, color='b', ls=':', lw=2, alpha=0.5)
 
-        #ax.set_xlim(0.0, 2.0)
-        #ax.set_ylim(18.2, 16.7)
+        ax.legend(loc='lower center', ncol=3, frameon=False, bbox_to_anchor=(0.5, -0.25))
+        # ax.set_xlim(0.0, 2.0)
+        # ax.set_ylim(18.2, 16.7)
         ax.set_xlabel('MJD')
         ax.grid()
         if RV:
@@ -353,7 +413,7 @@ def plot_SDSSspec(ROW, TDSSprop, prop_id, spec_dir, plt_ax):
     # spectral_type_prop_dir = "/Users/benjaminroulston/Dropbox/Research/TDSS/General/SpecTypeProp/"
 
     spec_box_size = 10
-    temp_box_size = 20
+    temp_box_size = 50
 
     xmin = 3800
     xmax = 10000
@@ -468,14 +528,15 @@ def plot_SDSSspec(ROW, TDSSprop, prop_id, spec_dir, plt_ax):
     smooth_temp_flux = smooth(temp_flux, temp_box_size)
     smooth_temp_wavelength = smooth(temp_lam, temp_box_size)
 
-    plotted_region = np.where((smooth_wavelength >= xmin) & (smooth_wavelength <= xmax))[0]
-    ymin = smooth_flux[plotted_region].min()
-    ymax = smooth_flux[plotted_region].max()
-
     lam8000_index = np.argmin(np.abs(smooth_wavelength - 8000.0))
     current_spec_flux_at_8000 = smooth_flux[lam8000_index]
     temp_flux_scaled = temp_flux * current_spec_flux_at_8000
     smooth_temp_flux = smooth_temp_flux * current_spec_flux_at_8000
+
+    plotted_region = np.where((smooth_wavelength >= xmin) & (smooth_wavelength <= xmax))[0]
+    plotted_region_temp = np.where((smooth_temp_wavelength >= xmin) & (smooth_temp_wavelength <= xmax))[0]
+    ymin = min(smooth_flux[plotted_region].min(), smooth_temp_flux[plotted_region_temp].min())
+    ymax = max(smooth_flux[plotted_region].max(), smooth_temp_flux[plotted_region_temp].max())
 
     this_EqW = eqw(temp_lam, temp_flux_scaled, wavelength, flux)
     cz = np.round(file_data[2].data['Z_NOQSO'][0] * (const.c.value / 1000), 2)
@@ -510,6 +571,7 @@ def plot_SDSSspec(ROW, TDSSprop, prop_id, spec_dir, plt_ax):
     plt_ax.plot(smooth_wavelength, smooth_flux, color='black', linewidth=0.5)
     # plt_ax.plot(temp_lam, temp_flux_scaled, color='red', alpha=0.3, linewidth=0.5)
     plt_ax.plot(smooth_temp_wavelength, smooth_temp_flux, color='red', alpha=0.3, linewidth=0.5)
+
     plt_ax.set_xlabel("Wavelength [\AA]")  # , fontdict=font)
     plt_ax.set_ylabel("Flux [10$^{-17}$ erg s$^{-1}$ cm$^{-2}$ \AA$^{-1}$]")  # , fontdict=font)
     plt_ax.set_title(plot_title)
@@ -977,3 +1039,23 @@ class latestFullVartoolsRun:
         self.xi_2, self.yi_2 = np.mgrid[-0.5:2.5:self.nbins*1j, 0.0:3.0:self.nbins*1j]
         self.zi_2 = self.k2(np.vstack([self.xi_2.flatten(), self.yi_2.flatten()]))
         self.zi_2 = np.sqrt(self.zi_2)
+
+
+def get_Vi_panels(ra, dec, runDate, copy=False, moveDir='/Users/benjaminroulston/Desktop/'):
+    Vi_plots_dir = f'/Users/benjaminroulston/Dropbox/Research/TDSS/Variable_Stars/WORKING_DIRECTORY/Vi/{runDate}/Vi_plots/'
+    all_filenames = []
+    for ii in tqdm.tqdm(range(ra.size)):
+        object_ra = ra[ii]
+        object_dec = dec[ii]
+        ra_string = '{:0>9.5f}'.format(object_ra)
+        dec_string = '{:0=+9.5f}'.format(object_dec)
+
+        this_Viplot_filename = f"{Vi_plots_dir}{ra_string}{dec_string}_Vi.pdf"
+        all_filenames.append(this_Viplot_filename)
+
+        if copy:
+            new_Viplot_filename = f"{moveDir}{ra_string}{dec_string}_Vi.pdf"
+            cp_cmd = os.system(f'cp {this_Viplot_filename} {new_Viplot_filename}')
+
+    all_filenames = np.array(all_filenames)
+    return all_filenames
