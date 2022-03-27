@@ -49,10 +49,10 @@ import VarStar_Vi_plot_functions as vi
 
 spec_dir = "/Users/benjaminroulston/Dropbox/Research/TDSS/Variable_Stars/HARD_COPY_ORGINAL_DATA/SDSS_spec/02-26-2020/SDSSspec/"
 CSS_LC_dir = "/Users/benjaminroulston/Dropbox/Research/TDSS/Variable_Stars/HARD_COPY_ORGINAL_DATA/CSS_LCs/csvs/"
-ZTF_LC_dir = "/Users/benjaminroulston/Dropbox/Research/TDSS/Variable_Stars/HARD_COPY_ORGINAL_DATA/ZTF/DATA/06-24-2020/"
+ZTF_LC_dir = "/Users/benjaminroulston/Dropbox/Research/TDSS/Variable_Stars/HARD_COPY_ORGINAL_DATA/ZTF/DATA/07-27-2021/"
 
 ZTF_filters = ['g', 'r']
-ZTF_LC_file_names = [f'TDSS_SES+PREV_DR16DR12griLT20_GAIADR2_Drake2014PerVar_ZTF_{ZTF_filter}_epochGT10_GroupID.fits' for ZTF_filter in ZTF_filters]
+ZTF_LC_file_names = [f'TDSS_VarStar_ZTFDR6_{ZTF_filter}_GroupID.fits' for ZTF_filter in ZTF_filters]
 ZTF_g_LCs = Table.read(ZTF_LC_dir + ZTF_LC_file_names[0])
 ZTF_r_LCs = Table.read(ZTF_LC_dir + ZTF_LC_file_names[1])
 # ***********************************************
@@ -91,8 +91,8 @@ else:
     properties = np.zeros((len(TDSSprop.data), len(prop_col_names_full)))
 
     properties = Table(properties, names=prop_col_names_full)
-    properties['ra'] = TDSSprop.data['ra']
-    properties['dec'] = TDSSprop.data['dec']
+    properties['ra'] = TDSSprop.data['ra_GaiaEDR3']
+    properties['dec'] = TDSSprop.data['dec_GaiaEDR3']
 
 
 last_periodic_filenames = np.loadtxt(f"{prop_out_dir}periodic_objects_filenames_07-16-2020.txt", dtype="S")
@@ -100,8 +100,8 @@ last_periodic_filenames = np.array([ii.decode() for ii in last_periodic_filename
 periodic_filenames = []
 all_filenames = []
 for prop_id, ROW in enumerate(tqdm.tqdm(TDSSprop.data)):
-        object_ra = ROW['ra']
-        object_dec = ROW['dec']
+        object_ra = ROW['ra_GaiaEDR3']
+        object_dec = ROW['dec_GaiaEDR3']
         ra_string = '{:0>9.5f}'.format(object_ra)
         dec_string = '{:0=+9.5f}'.format(object_dec)
 
@@ -123,8 +123,8 @@ plotLCerr = True
 plt_resid = False
 plt_subLC = True
 plot_rejected = False
-checkHarmonic = True
-logProblimit = -10
+checkHarmonic = False
+logProblimit = -5
 Nepochs_required = 10
 minP = 0.1
 maxP = 100.0
@@ -189,6 +189,9 @@ moveDir = f"/Users/benjaminroulston/Desktop/TDSS_VarStar_Cstar_ViP/"
 vi.get_Vi_panels(move_ra, move_dec, '2020-07-16', copy=True, moveDir=moveDir)
 
 
+
+prop_id = np.where(all_filenames == '123.85610+50.58151_Vi.pdf')[0][0]
+ROW = TDSSprop.data[prop_id]
 # ***********************************************
 # ***********************************************
 # ***********************************************
@@ -222,15 +225,15 @@ with warnings.catch_warnings():
         # prop_id = np.where(all_filenames == last_periodic_filenames[periodic_index])[0][0]
         # ROW = TDSSprop.data[prop_id]
 
-        object_ra = ROW['ra']
-        object_dec = ROW['dec']
+        object_ra = ROW['ra_GaiaEDR3']
+        object_dec = ROW['dec_GaiaEDR3']
         ra_string = '{:0>9.5f}'.format(object_ra)
         dec_string = '{:0=+9.5f}'.format(object_dec)
 
-        this_Viplot_filename = f"{ra_string}{dec_string}_Vi.pdf"
-        if this_Viplot_filename not in last_periodic_filenames:
-            properties[prop_id]['ViCompleted'] = 1
-            continue
+        # this_Viplot_filename = f"{ra_string}{dec_string}_Vi.pdf"
+        # if this_Viplot_filename not in last_periodic_filenames:
+        #    properties[prop_id]['ViCompleted'] = 1
+        #    continue
 
         mjd = ROW['mjd']
         plate = ROW['plate']
@@ -240,11 +243,14 @@ with warnings.catch_warnings():
         fiberid_string = '{:0>4}'.format(str(np.int(fiberid)))
         long_filename = f"spec-{plate_string}-{mjd_string}-{fiberid_string}.fits"
 
+        importlib.reload(vi)
+        importlib.reload(LCtools)
+
         fig = plt.figure(figsize=(13, 9), constrained_layout=True)
-        gs = GridSpec(2, 7, figure=fig, height_ratios=[1, 1], width_ratios=[1, 1, 1, 1, 0.4, 1, 1])  # , hspace=0.3, wspace=0.5)
+        gs = GridSpec(2, 6, figure=fig, height_ratios=[1, 1], width_ratios=[1, 1, 1, 1, 1, 1])  # , hspace=0.3, wspace=0.5)
         ax1 = fig.add_subplot(gs[0, :2])  # LC
         ax2 = fig.add_subplot(gs[0, 2:4])  # Chi2 vs Amp plots OR Palerversa+2013 plot
-        ax3 = fig.add_subplot(gs[0, 5:])  # CMD
+        ax3 = fig.add_subplot(gs[0, 4:])  # CMD
         ax4 = fig.add_subplot(gs[1, :])  # spectra with lines
         fig.suptitle(f'RA= {ra_string} DEC= {dec_string}', fontsize=16)
 
@@ -297,3 +303,105 @@ properties.write(f"{prop_out_dir}completed_Vi_prop_{datestr}.csv", format='csv',
 
 periodic_filenames = np.array(periodic_filenames)
 np.savetxt(f"{prop_out_dir}periodic_objects_filenames.txt", periodic_filenames, fmt="%s")
+
+
+
+
+
+
+########################################################################################################################
+########################################################################################################################
+########################################################################################################################
+########################################################################################################################
+########################################################################################################################
+
+importlib.reload(vi)
+importlib.reload(LCtools)
+
+def make_Vi_propID(prop_id, TDSSprop):
+    ROW = TDSSprop.data[prop_id]
+    object_ra = ROW['ra_GaiaEDR3']
+    object_dec = ROW['dec_GaiaEDR3']
+    ra_string = '{:0>9.5f}'.format(object_ra)
+    dec_string = '{:0=+9.5f}'.format(object_dec)
+
+    this_Viplot_filename = f"{ra_string}{dec_string}_Vi.pdf"
+    #if this_Viplot_filename not in last_periodic_filenames:
+    #    properties[prop_id]['ViCompleted'] = 1
+    #    continue
+
+    mjd = ROW['mjd']
+    plate = ROW['plate']
+    fiberid = ROW['fiber']
+    mjd_string = '{:0>5}'.format(str(np.int64(mjd)))
+    plate_string = '{:0>4}'.format(str(np.int64(plate)))
+    fiberid_string = '{:0>4}'.format(str(np.int64(fiberid)))
+    long_filename = f"spec-{plate_string}-{mjd_string}-{fiberid_string}.fits"
+
+    fig = plt.figure(figsize=(13, 9), constrained_layout=True)
+    gs = GridSpec(2, 6, figure=fig, height_ratios=[1, 1], width_ratios=[1, 1, 1, 1, 1, 1])  # , hspace=0.3, wspace=0.5)
+    ax1 = fig.add_subplot(gs[0, :2])  # LC
+    ax2 = fig.add_subplot(gs[0, 2:4])  # Chi2 vs Amp plots OR Palerversa+2013 plot
+    ax3 = fig.add_subplot(gs[0, 4:])  # CMD
+    ax4 = fig.add_subplot(gs[1, :])  # spectra with lines
+    fig.suptitle(f'RA= {ra_string} DEC= {dec_string}', fontsize=16)
+
+    CSS_prop, ZTF_g_prop, ZTF_r_prop, best_LC = vi.LC_analysis(ROW, TDSSprop, CSS_LC_dir, ZTF_g_LCs, ZTF_r_LCs, ax1, CSS_LC_plot_dir, ZTF_LC_plot_dir, Nepochs_required, minP=minP, maxP=maxP, log10FAP=logProblimit, checkHarmonic=checkHarmonic, plt_subLC=plt_subLC, plot_rejected=plot_rejected)
+    all_LC_props = [CSS_prop, ZTF_g_prop, ZTF_r_prop]
+
+    if best_LC == 'CSS':
+        if (CSS_prop['logProb'] <= logProblimit):
+            periodic_filenames.append(f"{ra_string}{dec_string}_Vi.pdf")
+    elif best_LC == 'ZTF_g':
+        if (ZTF_g_prop['logProb'] <= logProblimit):
+            periodic_filenames.append(f"{ra_string}{dec_string}_Vi.pdf")
+    elif best_LC == 'ZTF_r':
+        if (ZTF_r_prop['logProb'] <= logProblimit):
+            periodic_filenames.append(f"{ra_string}{dec_string}_Vi.pdf")
+
+    for LC_ii, LCprop in enumerate(all_LC_props):
+        if LCprop:
+            for key, value in LCprop.items():
+                properties[prop_id][prop_col_names_prefix[LC_ii] + key] = value
+
+    this_EqW = vi.plot_SDSSspec(ROW, TDSSprop, prop_id, spec_dir, ax4)
+    properties[prop_id]['EqW'] = this_EqW
+
+    vi.plot_middle(all_LC_props, best_LC, latestFullVartoolsRun, ax2, log10FAP=logProblimit)
+
+    vi.plot_CMD(TDSSprop, prop_id, ax3)
+
+    plt.savefig(f"{Vi_plots_dir}{ra_string}{dec_string}_Vi.pdf", dpi=600, bbox_inches='tight')
+    # plt.show()
+    plt.clf()
+    plt.close()
+
+    properties[prop_id]['ViCompleted'] = 1
+
+selected_SDU_propids = [3632,  5798,  7676, 15613, 20730, 21211, 21802, 21971, 22123, 22490, 22510, 23341]
+
+need_doubled = [5798, 21802, 21971, 22123, 22510]
+
+
+for ID in need_doubled:
+    make_Vi_propID(ID - 1, TDSSprop)
+
+for ID in selected_SDU_propids:
+    ROW = TDSSprop.data[ID - 1]
+
+    ra_string = '{:0>9.5f}'.format(ROW['ra_GaiaEDR3'])
+    dec_string = '{:0=+9.5f}'.format(ROW['dec_GaiaEDR3'])
+
+    ZTF_g_lc_data = ZTF_g_LCs[(ZTF_g_LCs['ZTF_GroupID'] == ROW['ZTF_GroupID'])]['mjd', 'mag', 'magerr']
+    ZTF_r_lc_data = ZTF_r_LCs[(ZTF_r_LCs['ZTF_GroupID'] == ROW['ZTF_GroupID'])]['mjd', 'mag', 'magerr']
+
+    ZTF_g_lc_data.sort('mjd')
+    ZTF_r_lc_data.sort('mjd')
+
+    ZTF_g_lc_data.write(f"/Users/benjaminroulston/Desktop/{ra_string}{dec_string}_ZTFg_LC.fits", format='fits', overwrite=True)
+    ZTF_r_lc_data.write(f"/Users/benjaminroulston/Desktop/{ra_string}{dec_string}_ZTFr_LC.fits", format='fits', overwrite=True)
+
+
+
+
+make_Vi_propID(18595, TDSSprop)
