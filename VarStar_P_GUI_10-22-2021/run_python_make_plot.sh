@@ -1,0 +1,1 @@
+echo {170..25120..1} | xargs -n 1 -P 500 python make_period_inspect_plots.py
